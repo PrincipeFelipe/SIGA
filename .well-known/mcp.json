@@ -1,0 +1,72 @@
+{
+  "mcpServers": {
+    "mariadb": {
+      "name": "mariadb-mcp",
+      "description": "Conector MCP que permite a GitHub Copilot consultar y modificar la base de datos MariaDB local.",
+      "version": "1.0.0",
+      "type": "http",
+      "url": "http://localhost:4000",
+      "endpoints": {
+        "query": {
+          "method": "POST",
+          "path": "/query",
+          "description": "Ejecuta una consulta SQL sobre la base de datos MariaDB."
+        },
+        "tables": {
+          "method": "GET",
+          "path": "/tables",
+          "description": "Lista todas las tablas de la base de datos."
+        },
+        "table": {
+          "method": "GET",
+          "path": "/table/:name",
+          "description": "Obtiene la estructura de una tabla específica."
+        }
+      }
+    },
+    "github": {
+      "name": "github-mcp",
+      "description": "Conector MCP que permite a GitHub Copilot interactuar con el repositorio GitHub del proyecto.",
+      "version": "1.0.0",
+      "type": "http",
+      "url": "http://localhost:4001",
+      "endpoints": {
+        "repo": {
+          "method": "GET",
+          "path": "/repo",
+          "description": "Obtiene información del repositorio."
+        },
+        "branches": {
+          "method": "GET",
+          "path": "/branches",
+          "description": "Lista todas las ramas del repositorio."
+        },
+        "commits": {
+          "method": "GET",
+          "path": "/commits",
+          "description": "Lista commits recientes."
+        },
+        "issues": {
+          "method": "GET",
+          "path": "/issues",
+          "description": "Lista issues del repositorio."
+        },
+        "pulls": {
+          "method": "GET",
+          "path": "/pulls",
+          "description": "Lista pull requests."
+        },
+        "createIssue": {
+          "method": "POST",
+          "path": "/issue",
+          "description": "Crea un nuevo issue."
+        },
+        "file": {
+          "method": "GET",
+          "path": "/file/:path",
+          "description": "Obtiene el contenido de un archivo."
+        }
+      }
+    }
+  }
+}
