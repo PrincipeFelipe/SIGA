@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150">
+  <!-- Fondo circular -->
+  <circle cx="75" cy="75" r="70" fill="#004E2E" stroke="#C8102E" stroke-width="3"/>
+  
+  <!-- Escudo exterior -->
+  <path d="M75 20 L100 35 L100 70 Q100 90 75 110 Q50 90 50 70 L50 35 Z" 
+        fill="#C8102E" stroke="#FFC700" stroke-width="2"/>
+  
+  <!-- Escudo interior -->
+  <path d="M75 30 L93 42 L93 68 Q93 84 75 98 Q57 84 57 68 L57 42 Z" 
+        fill="#FFC700" stroke="#004E2E" stroke-width="1.5"/>
+  
+  <!-- Cruz central -->
+  <rect x="70" y="45" width="10" height="35" fill="#004E2E"/>
+  <rect x="60" y="57" width="30" height="10" fill="#004E2E"/>
+  
+  <!-- Texto LOGO -->
+  <text x="75" y="130" font-family="Arial, sans-serif" font-size="14" 
+        font-weight="bold" fill="white" text-anchor="middle">COMANDANCIA</text>
+</svg>

@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Importar fuentes de Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+/* Estilos globales personalizados */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #F7F9FA;
+  color: #1A1A1A;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #004E2E;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #003820;
+}
+
+/* Animaciones personalizadas */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-in-out;
+}
+
+/* Clases de utilidad personalizadas */
+.btn-primary {
+  @apply bg-primary text-white font-medium py-2 px-4 rounded-lg hover:bg-opacity-90 transition-all duration-200;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 text-text font-medium py-2 px-4 rounded-lg hover:bg-gray-300 transition-all duration-200;
+}
+
+.btn-accent {
+  @apply bg-accent text-white font-medium py-2 px-4 rounded-lg hover:bg-opacity-90 transition-all duration-200;
+}
+
+.input-field {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-md p-6;
+}
+
+.badge {
+  @apply inline-block px-3 py-1 text-xs font-semibold rounded-full;
+}
+
+.badge-primary {
+  @apply badge bg-primary text-white;
+}
+
+.badge-accent {
+  @apply badge bg-accent text-white;
+}
+
+.badge-alert {
+  @apply badge bg-alert text-text;
+}
