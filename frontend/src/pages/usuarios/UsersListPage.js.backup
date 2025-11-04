@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw, FiSearch, FiKey, FiShield, FiEye } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw, FiSearch, FiKey } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 import Layout from '../../components/layout/Layout';
 import { Card, Badge, Loading, Button, Input } from '../../components/common';
-import { UserFormModal, UserRolesModal } from '../../components/usuarios';
+import { UserFormModal } from '../../components/usuarios';
 import { usuariosService, unidadesService } from '../../services';
-import { usePermissions } from '../../hooks/usePermissions';
 
 const UsersListPage = () => {
-  const { can } = usePermissions();
   const [usuarios, setUsuarios] = useState([]);
   const [unidades, setUnidades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,10 +17,7 @@ const UsersListPage = () => {
     activo: '', pagina: 1, limite: 10
   });
   const [showFormModal, setShowFormModal] = useState(false);
-  const [showRolesModal, setShowRolesModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [isReadOnlyMode, setIsReadOnlyMode] = useState(false); // Modo solo lectura
 
   useEffect(() => { cargarUnidades(); }, []);
 
@@ -53,25 +48,8 @@ const UsersListPage = () => {
 
   const cargarUnidades = async () => {
     try {
-      // Obtener árbol de unidades y filtrar solo activas
-      const data = await unidadesService.getTree();
-      const aplanarUnidades = (unidades, resultado = []) => {
-        unidades.forEach(unidad => {
-          if (unidad.activo) {
-            resultado.push({ 
-              id: unidad.id, 
-              nombre: unidad.nombre, 
-              codigo_unidad: unidad.codigo_unidad, 
-              tipo_unidad: unidad.tipo_unidad 
-            });
-            if (unidad.hijos && unidad.hijos.length > 0) {
-              aplanarUnidades(unidad.hijos, resultado);
-            }
-          }
-        });
-        return resultado;
-      };
-      setUnidades(aplanarUnidades(data));
+      const data = await unidadesService.getFlat();
+      setUnidades(data || []);
     } catch (error) {
       console.error('Error al cargar unidades:', error);
       toast.error('Error al cargar la lista de unidades');
@@ -88,37 +66,17 @@ const UsersListPage = () => {
 
   const handleCreate = () => {
     setEditingUser(null);
-    setIsReadOnlyMode(false);
     setShowFormModal(true);
   };
 
   const handleEdit = (usuario) => {
     setEditingUser(usuario);
-    setIsReadOnlyMode(false);
-    setShowFormModal(true);
-  };
-
-  const handleViewDetail = (usuario) => {
-    setEditingUser(usuario);
-    setIsReadOnlyMode(true);
     setShowFormModal(true);
   };
 
   const handleSaveSuccess = () => {
     setShowFormModal(false);
     setEditingUser(null);
-    setIsReadOnlyMode(false);
-    cargarUsuarios();
-  };
-
-  const handleManageRoles = (usuario) => {
-    setSelectedUser(usuario);
-    setShowRolesModal(true);
-  };
-
-  const handleRolesSuccess = () => {
-    setShowRolesModal(false);
-    setSelectedUser(null);
     cargarUsuarios();
   };
 
@@ -218,11 +176,7 @@ const UsersListPage = () => {
             <h1 className="text-3xl font-bold text-gray-900">Usuarios</h1>
             <p className="text-gray-500 mt-1">Gestión de usuarios del sistema</p>
           </div>
-          {can.createUsers && (
-            <Button variant="primary" onClick={handleCreate} icon={<FiPlus />}>
-              Nuevo Usuario
-            </Button>
-          )}
+          <Button variant="primary" onClick={handleCreate} icon={<FiPlus />}>Nuevo Usuario</Button>
         </div>
 
         <Card title="Filtros">
@@ -287,73 +241,23 @@ const UsersListPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900">{usuario.email}</div></td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{usuario.unidad_destino_nombre || '-'}</div>
-                      <div className="text-xs text-gray-500">{usuario.codigo_unidad || '-'}</div>
+                      <div className="text-sm text-gray-900">{usuario.unidad_destino?.nombre || '-'}</div>
+                      <div className="text-xs text-gray-500">{usuario.unidad_destino?.codigo_unidad || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge variant={usuario.activo ? 'success' : 'danger'}>{usuario.activo ? 'Activo' : 'Inactivo'}</Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        {/* Ver detalle: solo si tiene permiso pero NO puede editar */}
-                        {can.viewUserDetail && !can.editUsers && (
-                          <button 
-                            onClick={() => handleViewDetail(usuario)} 
-                            className="text-blue-600 hover:text-blue-800 p-1" 
-                            title="Ver detalle"
-                          >
-                            <FiEye size={18} />
-                          </button>
-                        )}
-                        
-                        {/* Editar: solo si tiene permiso de editar */}
-                        {can.editUsers && (
-                          <button 
-                            onClick={() => handleEdit(usuario)} 
-                            className="text-primary hover:text-primary/80 p-1" 
-                            title="Editar"
-                          >
-                            <FiEdit2 size={18} />
-                          </button>
-                        )}
-                        
-                        {/* Gestionar roles: solo si tiene permiso específico */}
-                        {can.manageUserRoles && (
-                          <button 
-                            onClick={() => handleManageRoles(usuario)} 
-                            className="text-purple-600 hover:text-purple-800 p-1" 
-                            title="Gestionar roles y permisos"
-                          >
-                            <FiShield size={18} />
-                          </button>
-                        )}
-                        
-                        {/* Restablecer contraseña: solo si tiene permiso específico */}
-                        {can.resetPassword && (
-                          <button 
-                            onClick={() => handleResetPassword(usuario)} 
-                            className="text-orange-600 hover:text-orange-800 p-1" 
-                            title="Restablecer contraseña"
-                          >
-                            <FiKey size={18} />
-                          </button>
-                        )}
-                        
-                        {/* Eliminar: solo si tiene permiso de eliminar */}
-                        {can.deleteUsers && (
-                          <button 
-                            onClick={() => handleEliminar(usuario)} 
-                            className="text-accent hover:text-accent/80 p-1" 
-                            title="Eliminar"
-                          >
-                            <FiTrash2 size={18} />
-                          </button>
-                        )}
-                        
-                        {/* Mensaje cuando no hay acciones disponibles */}
-                        {!can.viewUserDetail && !can.editUsers && !can.manageUserRoles && !can.resetPassword && !can.deleteUsers && (
-                          <span className="text-gray-400 text-xs">Sin acciones</span>
-                        )}
+                        <button onClick={() => handleEdit(usuario)} className="text-primary hover:text-primary/80 p-1" title="Editar">
+                          <FiEdit2 size={18} />
+                        </button>
+                        <button onClick={() => handleResetPassword(usuario)} className="text-blue-600 hover:text-blue-800 p-1" title="Restablecer contraseña">
+                          <FiKey size={18} />
+                        </button>
+                        <button onClick={() => handleEliminar(usuario)} className="text-accent hover:text-accent/80 p-1" title="Eliminar">
+                          <FiTrash2 size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -365,27 +269,9 @@ const UsersListPage = () => {
         </Card>
 
         {showFormModal && (
-          <UserFormModal 
-            isOpen={showFormModal}
-            onClose={() => { 
-              setShowFormModal(false); 
-              setEditingUser(null); 
-              setIsReadOnlyMode(false); 
-            }}
-            user={editingUser} 
-            onSuccess={handleSaveSuccess}
-            readOnly={isReadOnlyMode}
-          />
-        )}
-
-        {/* Modal de gestión de roles */}
-        {showRolesModal && selectedUser && (
-          <UserRolesModal 
-            isOpen={showRolesModal}
-            onClose={() => { setShowRolesModal(false); setSelectedUser(null); }}
-            usuario={selectedUser} 
-            onSuccess={handleRolesSuccess} 
-          />
+          <UserFormModal isOpen={showFormModal}
+            onClose={() => { setShowFormModal(false); setEditingUser(null); }}
+            user={editingUser} onSuccess={handleSaveSuccess} />
         )}
       </div>
     </Layout>

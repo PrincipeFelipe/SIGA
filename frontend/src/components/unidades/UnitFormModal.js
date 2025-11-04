@@ -16,8 +16,8 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     codigo_unidad: '',
-    tipo: '',
-    unidad_superior_id: '',
+    tipo_unidad: '',
+    parent_id: '',
     ubicacion: '',
     descripcion: '',
     activo: true
@@ -39,8 +39,8 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
       setFormData({
         nombre: unit.nombre || '',
         codigo_unidad: unit.codigo_unidad || '',
-        tipo: unit.tipo || '',
-        unidad_superior_id: unit.unidad_superior_id || '',
+        tipo_unidad: unit.tipo_unidad || '',
+        parent_id: unit.parent_id || '',
         ubicacion: unit.ubicacion || '',
         descripcion: unit.descripcion || '',
         activo: unit.activo !== undefined ? unit.activo : true
@@ -49,7 +49,7 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
       // Si tiene padre, pre-seleccionar
       setFormData(prev => ({
         ...prev,
-        unidad_superior_id: parentUnit.id
+        parent_id: parentUnit.id
       }));
     }
   }, [isOpen, unit, parentUnit]);
@@ -89,6 +89,15 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
       nuevosErrores.nombre = 'El nombre debe tener al menos 3 caracteres';
     }
 
+    if (!formData.tipo_unidad) {
+      nuevosErrores.tipo_unidad = 'El tipo de unidad es requerido';
+    }
+
+    // Validar que tipos no-Zona tengan parent_id
+    if (formData.tipo_unidad && formData.tipo_unidad !== 'Zona' && !formData.parent_id) {
+      nuevosErrores.parent_id = 'Debe seleccionar una unidad superior';
+    }
+
     if (formData.codigo_unidad && formData.codigo_unidad.trim().length < 2) {
       nuevosErrores.codigo_unidad = 'El código debe tener al menos 2 caracteres';
     }
@@ -109,8 +118,12 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
       setSubmitting(true);
 
       const dataToSend = {
-        ...formData,
-        unidad_superior_id: formData.unidad_superior_id || null
+        nombre: formData.nombre,
+        tipo_unidad: formData.tipo_unidad,
+        codigo_unidad: formData.codigo_unidad || null,
+        parent_id: formData.parent_id || null,
+        descripcion: formData.descripcion || null,
+        activo: formData.activo
       };
 
       if (isEditMode) {
@@ -174,36 +187,36 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
           {/* Tipo */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tipo de Unidad
+              Tipo de Unidad *
             </label>
             <select
-              name="tipo"
-              value={formData.tipo}
+              name="tipo_unidad"
+              value={formData.tipo_unidad}
               onChange={handleChange}
-              className="input-field"
+              className={`input-field ${errors.tipo_unidad ? 'border-red-500' : ''}`}
             >
               <option value="">Seleccionar tipo</option>
-              <option value="Dirección General">Dirección General</option>
+              <option value="Zona">Zona</option>
               <option value="Comandancia">Comandancia</option>
-              <option value="Compañía">Compañía</option>
+              <option value="Compañia">Compañía</option>
               <option value="Puesto">Puesto</option>
-              <option value="Sección">Sección</option>
-              <option value="Unidad Especial">Unidad Especial</option>
-              <option value="Otro">Otro</option>
             </select>
+            {errors.tipo_unidad && (
+              <p className="text-red-500 text-xs mt-1">{errors.tipo_unidad}</p>
+            )}
           </div>
 
           {/* Unidad Superior */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Unidad Superior
+              Unidad Superior {formData.tipo_unidad !== 'Zona' && '*'}
             </label>
             <select
-              name="unidad_superior_id"
-              value={formData.unidad_superior_id}
+              name="parent_id"
+              value={formData.parent_id}
               onChange={handleChange}
-              className="input-field"
-              disabled={Boolean(parentUnit)}
+              className={`input-field ${errors.parent_id ? 'border-red-500' : ''}`}
+              disabled={Boolean(parentUnit) || formData.tipo_unidad === 'Zona'}
             >
               <option value="">Sin unidad superior (raíz)</option>
               {unidades.map((unidad) => (
@@ -212,9 +225,17 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
                 </option>
               ))}
             </select>
+            {errors.parent_id && (
+              <p className="text-red-500 text-xs mt-1">{errors.parent_id}</p>
+            )}
             {parentUnit && (
               <p className="text-xs text-gray-500 mt-1">
                 Heredada de la navegación
+              </p>
+            )}
+            {formData.tipo_unidad === 'Zona' && (
+              <p className="text-xs text-gray-500 mt-1">
+                Las Zonas no tienen unidad superior
               </p>
             )}
           </div>

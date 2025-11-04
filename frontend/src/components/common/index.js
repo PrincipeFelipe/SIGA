@@ -10,3 +10,4 @@ export { default as Loading } from './Loading';
 export { default as Badge } from './Badge';
 export { default as Table } from './Table';
 export { default as Toast } from './Toast';
+export { default as TableActions, StandardActions } from './TableActions';

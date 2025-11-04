@@ -324,13 +324,28 @@ async function actualizar(req, res) {
         const { nombre, codigo_unidad, descripcion, activo } = req.body;
         
         // Verificar que la unidad existe
-        const [unidad] = await query('SELECT id FROM Unidades WHERE id = ?', [id]);
+        const [unidad] = await query('SELECT * FROM Unidades WHERE id = ?', [id]);
         
         if (!unidad) {
             return res.status(404).json({
                 success: false,
                 message: 'Unidad no encontrada'
             });
+        }
+
+        // Si se está actualizando el código, verificar que no exista otro con el mismo
+        if (codigo_unidad !== undefined && codigo_unidad !== unidad.codigo_unidad) {
+            const [existente] = await query(
+                'SELECT id FROM Unidades WHERE codigo_unidad = ? AND id != ?',
+                [codigo_unidad, id]
+            );
+            
+            if (existente) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Ya existe otra unidad con ese código'
+                });
+            }
         }
         
         // Construir query de actualización
@@ -367,6 +382,12 @@ async function actualizar(req, res) {
             `UPDATE Unidades SET ${updates.join(', ')} WHERE id = ?`,
             params
         );
+
+        // Si se actualizó el código, actualizar recursivamente los códigos de las unidades descendientes
+        let unidadesActualizadas = 1;
+        if (codigo_unidad !== undefined && codigo_unidad !== unidad.codigo_unidad) {
+            unidadesActualizadas = await actualizarCodigosDescendientes(id, unidad.codigo_unidad, codigo_unidad);
+        }
         
         // Log de auditoría
         await logManual(
@@ -374,8 +395,8 @@ async function actualizar(req, res) {
             'UPDATE',
             'Unidad',
             id,
-            `Unidad actualizada: ID ${id}`,
-            { nombre, codigo_unidad, descripcion, activo }
+            `Unidad actualizada: ${nombre || unidad.nombre}${unidadesActualizadas > 1 ? ` (+${unidadesActualizadas - 1} descendientes)` : ''}`,
+            { nombre, codigo_unidad, descripcion, activo, unidades_afectadas: unidadesActualizadas }
         );
         
         // Obtener unidad actualizada
@@ -386,12 +407,30 @@ async function actualizar(req, res) {
         
         res.json({
             success: true,
-            message: 'Unidad actualizada correctamente',
-            data: unidadActualizada
+            message: `Unidad actualizada correctamente${unidadesActualizadas > 1 ? ` (${unidadesActualizadas} unidades afectadas)` : ''}`,
+            data: unidadActualizada,
+            unidades_actualizadas: unidadesActualizadas
         });
         
     } catch (error) {
         console.error('❌ Error actualizando unidad:', error);
+        
+        // Si es un error de código duplicado, devolver mensaje específico
+        if (error.message && error.message.includes('ya está asignado')) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+        
+        // Si es un error SQL de clave duplicada
+        if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+            return res.status(400).json({
+                success: false,
+                message: 'El código de unidad ya existe. Por favor, elige otro código único.'
+            });
+        }
+        
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor'
@@ -420,29 +459,31 @@ async function eliminar(req, res) {
             });
         }
         
-        // Verificar que no tiene hijos
+        // Verificar que no tiene hijos ACTIVOS
         const [hijos] = await query(
-            'SELECT COUNT(*) as count FROM Unidades WHERE parent_id = ?',
+            'SELECT COUNT(*) as count FROM Unidades WHERE parent_id = ? AND activo = TRUE',
             [id]
         );
         
         if (hijos.count > 0) {
+            const plural = hijos.count > 1;
             return res.status(400).json({
                 success: false,
-                message: 'No se puede eliminar una unidad que tiene sub-unidades'
+                message: `No se puede eliminar la unidad "${unidad.nombre}" porque tiene ${hijos.count} sub-unidad${plural ? 'es' : ''} activa${plural ? 's' : ''}. Primero debes eliminar o desactivar ${plural ? 'estas sub-unidades' : 'esta sub-unidad'}.`
             });
         }
         
-        // Verificar que no tiene usuarios asignados
+        // Verificar que no tiene usuarios ACTIVOS asignados
         const [usuarios] = await query(
-            'SELECT COUNT(*) as count FROM Usuarios WHERE unidad_destino_id = ?',
+            'SELECT COUNT(*) as count FROM Usuarios WHERE unidad_destino_id = ? AND activo = TRUE',
             [id]
         );
         
         if (usuarios.count > 0) {
+            const plural = usuarios.count > 1;
             return res.status(400).json({
                 success: false,
-                message: 'No se puede eliminar una unidad que tiene usuarios asignados'
+                message: `No se puede eliminar la unidad "${unidad.nombre}" porque tiene ${usuarios.count} usuario${plural ? 's' : ''} activo${plural ? 's' : ''} asignado${plural ? 's' : ''}. Primero debes reasignar o desactivar ${plural ? 'estos usuarios' : 'este usuario'}.`
             });
         }
         
@@ -474,6 +515,69 @@ async function eliminar(req, res) {
 }
 
 /**
+ * Actualizar recursivamente los códigos de todas las unidades descendientes
+ * cuando se cambia el código de una unidad padre
+ */
+async function actualizarCodigosDescendientes(unidadId, codigoAntiguo, codigoNuevo) {
+    try {
+        let totalActualizadas = 1; // Contar la unidad padre
+        
+        // Obtener todos los hijos directos
+        const hijos = await query(
+            'SELECT id, codigo_unidad, nombre FROM Unidades WHERE parent_id = ?',
+            [unidadId]
+        );
+        
+        if (hijos.length === 0) {
+            return totalActualizadas;
+        }
+        
+        // Actualizar código de cada hijo
+        for (const hijo of hijos) {
+            if (hijo.codigo_unidad && hijo.codigo_unidad.startsWith(codigoAntiguo)) {
+                // Reemplazar el prefijo del código antiguo por el nuevo
+                const nuevoCodigo = hijo.codigo_unidad.replace(codigoAntiguo, codigoNuevo);
+                
+                // Verificar si el nuevo código ya existe en otra unidad
+                const [existente] = await query(
+                    'SELECT id, nombre FROM Unidades WHERE codigo_unidad = ? AND id != ?',
+                    [nuevoCodigo, hijo.id]
+                );
+                
+                if (existente) {
+                    throw new Error(
+                        `No se puede actualizar: el código "${nuevoCodigo}" ya está asignado a la unidad "${existente.nombre}" (ID: ${existente.id}). ` +
+                        `Esto causaría un conflicto con "${hijo.nombre}" (ID: ${hijo.id}).`
+                    );
+                }
+                
+                await query(
+                    'UPDATE Unidades SET codigo_unidad = ? WHERE id = ?',
+                    [nuevoCodigo, hijo.id]
+                );
+                
+                totalActualizadas++;
+                
+                // Actualizar recursivamente los descendientes de este hijo
+                const descendientes = await actualizarCodigosDescendientes(
+                    hijo.id, 
+                    hijo.codigo_unidad, 
+                    nuevoCodigo
+                );
+                
+                totalActualizadas += descendientes - 1; // Restar 1 porque ya contamos el hijo
+            }
+        }
+        
+        return totalActualizadas;
+        
+    } catch (error) {
+        console.error('❌ Error actualizando códigos descendientes:', error);
+        throw error;
+    }
+}
+
+/**
  * Construir estructura de árbol desde lista plana
  */
 function construirArbol(unidades) {
@@ -482,7 +586,7 @@ function construirArbol(unidades) {
     
     // Crear mapa de unidades
     unidades.forEach(u => {
-        map.set(u.id, { ...u, children: [] });
+        map.set(u.id, { ...u, hijos: [] });
     });
     
     // Construir árbol
@@ -493,7 +597,7 @@ function construirArbol(unidades) {
         } else {
             const parent = map.get(u.parent_id);
             if (parent) {
-                parent.children.push(node);
+                parent.hijos.push(node);
             }
         }
     });

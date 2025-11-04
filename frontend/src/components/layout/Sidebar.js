@@ -2,7 +2,7 @@
 // COMPONENTE SIDEBAR - Barra lateral de navegación
 // ============================================================================
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
     FiHome, 
@@ -10,8 +10,12 @@ import {
     FiShield, 
     FiSettings,
     FiFileText,
-    FiLayers
+    FiLayers,
+    FiBarChart2,
+    FiGrid
 } from 'react-icons/fi';
+import { useAuth } from '../../contexts/AuthContext';
+
 // Importar logo - Si no existe, se mostrará un placeholder
 let logoSrc;
 try {
@@ -42,15 +46,37 @@ const LogoImage = () => {
 
 const Sidebar = ({ isOpen, onClose }) => {
     const location = useLocation();
+    const { menu } = useAuth();
     
-    const menuItems = [
-        { path: '/', icon: FiHome, label: 'Dashboard' },
-        { path: '/usuarios', icon: FiUsers, label: 'Usuarios' },
-        { path: '/unidades', icon: FiLayers, label: 'Unidades' },
-        { path: '/roles', icon: FiShield, label: 'Roles' },
-        { path: '/logs', icon: FiFileText, label: 'Logs' },
-        { path: '/configuracion', icon: FiSettings, label: 'Configuración' },
-    ];
+    // Debug: verificar qué menú está recibiendo el componente
+    useEffect(() => {
+        console.log('🎯 Sidebar - menú actualizado:', {
+            cantidadItems: menu?.length || 0,
+            items: menu,
+            esArray: Array.isArray(menu),
+            menu
+        });
+    }, [menu]);
+    
+    // Mapeo de iconos (nombres en BD -> componentes React)
+    const iconMap = {
+        'icon-home': FiHome,
+        'icon-settings': FiSettings,
+        'icon-users': FiUsers,
+        'icon-sitemap': FiLayers,
+        'icon-shield': FiShield,
+        'icon-chart-bar': FiBarChart2,
+        'icon-history': FiFileText,
+        'icon-grid': FiGrid
+    };
+    
+    // Usar el menú del contexto directamente
+    // Si está vacío o undefined, mostrar solo Dashboard como fallback
+    const menuItems = Array.isArray(menu) && menu.length > 0 
+        ? menu 
+        : [
+            { id: 'fallback-1', ruta: '/', icono: 'icon-home', nombre: 'Dashboard (Fallback)' }
+        ];
     
     const isActive = (path) => {
         if (path === '/') {
@@ -88,15 +114,24 @@ const Sidebar = ({ isOpen, onClose }) => {
                 
                 {/* Menú de navegación - con scroll si es necesario */}
                 <nav className="flex-1 overflow-y-auto py-6 px-4">
+                    {/* Indicador de carga del menú */}
+                    {(!menuItems || menuItems.length === 0) && (
+                        <div className="text-white text-opacity-60 text-center py-4 text-sm">
+                            <p>Cargando menú...</p>
+                            <p className="text-xs mt-2">Items: {menu?.length || 0}</p>
+                        </div>
+                    )}
+                    
                     <ul className="space-y-2">
                         {menuItems.map((item) => {
-                            const Icon = item.icon;
-                            const active = isActive(item.path);
+                            // Obtener componente de icono desde el mapa
+                            const IconComponent = iconMap[item.icono] || FiGrid;
+                            const active = isActive(item.ruta);
                             
                             return (
-                                <li key={item.path}>
+                                <li key={item.id || item.ruta}>
                                     <Link
-                                        to={item.path}
+                                        to={item.ruta}
                                         onClick={onClose}
                                         className={`
                                             flex items-center gap-3 px-4 py-3 rounded-lg
@@ -107,8 +142,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                                             }
                                         `}
                                     >
-                                        <Icon size={20} />
-                                        <span>{item.label}</span>
+                                        <IconComponent size={20} />
+                                        <span>{item.nombre}</span>
                                     </Link>
                                 </li>
                             );

@@ -307,7 +307,8 @@ const eliminar = async (req, res) => {
 const asignarPermisos = async (req, res) => {
     try {
         const { id } = req.params;
-        const { permisos } = req.body; // Array de IDs de permisos
+        // Aceptar ambos formatos: permisos o permisos_ids
+        const permisos = req.body.permisos || req.body.permisos_ids;
 
         if (!Array.isArray(permisos) || permisos.length === 0) {
             return res.status(400).json({
@@ -329,12 +330,13 @@ const asignarPermisos = async (req, res) => {
             // Eliminar permisos actuales del rol
             await conn.query('DELETE FROM Roles_Permisos WHERE rol_id = ?', [id]);
 
-            // Insertar nuevos permisos
-            const values = permisos.map(permisoId => [id, permisoId]);
-            await conn.query(
-                'INSERT INTO Roles_Permisos (rol_id, permiso_id) VALUES ?',
-                [values]
-            );
+            // Insertar nuevos permisos uno por uno
+            for (const permisoId of permisos) {
+                await conn.query(
+                    'INSERT INTO Roles_Permisos (rol_id, permiso_id) VALUES (?, ?)',
+                    [id, permisoId]
+                );
+            }
         });
 
         // Obtener los permisos asignados

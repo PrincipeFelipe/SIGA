@@ -56,25 +56,54 @@ const UnitsTreePage = () => {
   const handleDelete = async (unit) => {
     const hasChildren = unit.hijos && unit.hijos.length > 0;
     
+    // Si tiene hijos, mostrar advertencia y no permitir eliminar
+    if (hasChildren) {
+      await Swal.fire({
+        title: 'No se puede eliminar',
+        html: `
+          <div style="text-align: left;">
+            <p style="color: #374151; margin-bottom: 12px;">
+              La unidad <strong>${unit.nombre}</strong> no puede ser eliminada.
+            </p>
+            <div style="background-color: #FEF3C7; padding: 12px; border-radius: 8px; border: 1px solid #FDE047;">
+              <p style="color: #92400E; font-size: 14px; margin: 0; margin-bottom: 8px;">
+                <strong>⚠️ Motivo:</strong> Esta unidad tiene ${unit.hijos.length} sub-unidad(es) dependiente(s).
+              </p>
+              <p style="color: #92400E; font-size: 14px; margin: 0;">
+                Debes eliminar o reasignar primero todas las sub-unidades antes de poder eliminar esta unidad.
+              </p>
+            </div>
+          </div>
+        `,
+        icon: 'warning',
+        confirmButtonColor: '#004E2E',
+        confirmButtonText: 'Entendido',
+        buttonsStyling: true
+      });
+      return; // No continuar con la eliminación
+    }
+    
+    // Si no tiene hijos, pedir confirmación
     const result = await Swal.fire({
       title: '¿Eliminar unidad?',
       html: `
-        <p>¿Estás seguro de que deseas eliminar <strong>${unit.nombre}</strong>?</p>
-        ${hasChildren ? `
-          <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-            <p class="text-yellow-800 text-sm">
-              <strong>Advertencia:</strong> Esta unidad tiene ${unit.hijos.length} sub-unidad(es).
-              No podrás eliminarla hasta que elimines o reasignes las sub-unidades.
-            </p>
-          </div>
-        ` : ''}
+        <p style="color: #374151; margin-bottom: 8px;">
+          ¿Estás seguro de que deseas eliminar <strong>${unit.nombre}</strong>?
+        </p>
+        <p style="color: #6B7280; font-size: 14px; margin-top: 12px;">
+          Esta acción desactivará la unidad en el sistema.
+        </p>
       `,
-      icon: 'warning',
+      icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#C8102E',
       cancelButtonColor: '#6B7280',
       confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
+      buttonsStyling: true,
+      reverseButtons: false,
+      focusConfirm: false,
+      focusCancel: false
     });
 
     if (result.isConfirmed) {
@@ -85,7 +114,36 @@ const UnitsTreePage = () => {
       } catch (error) {
         console.error('Error al eliminar unidad:', error);
         const mensaje = error.response?.data?.message || 'Error al eliminar la unidad';
-        toast.error(mensaje);
+        
+        // Si es un error 400, es una validación (usuarios o sub-unidades)
+        if (error.response?.status === 400) {
+          // Determinar el tipo de error por el contenido del mensaje
+          const esErrorUsuarios = mensaje.includes('usuario');
+          const esErrorSubunidades = mensaje.includes('sub-unidad');
+          
+          await Swal.fire({
+            title: 'No se puede eliminar',
+            html: `
+              <div style="text-align: left;">
+                <div style="background-color: ${esErrorUsuarios ? '#FEE2E2' : '#FEF3C7'}; padding: 12px; border-radius: 8px; border: 1px solid ${esErrorUsuarios ? '#FCA5A5' : '#FDE047'}; margin-bottom: 12px;">
+                  <p style="color: ${esErrorUsuarios ? '#991B1B' : '#92400E'}; font-size: 14px; margin: 0;">
+                    <strong>⚠️ ${esErrorUsuarios ? 'Usuarios asignados' : 'Sub-unidades activas'}</strong>
+                  </p>
+                </div>
+                <p style="color: #374151; font-size: 14px; line-height: 1.5;">
+                  ${mensaje}
+                </p>
+              </div>
+            `,
+            icon: 'warning',
+            confirmButtonColor: '#004E2E',
+            confirmButtonText: 'Entendido',
+            buttonsStyling: true
+          });
+        } else {
+          // Para otros errores, mostrar toast
+          toast.error(mensaje);
+        }
       }
     }
   };

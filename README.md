@@ -26,6 +26,7 @@ Esta aplicación web tiene como objetivo facilitar la gestión administrativa in
 - **Usuarios**: CRUD con filtrado jerárquico, reseteo de contraseñas
 - **Unidades**: Árbol organizacional con CTEs recursivos
 - **Roles y Permisos**: Sistema RBAC completo (26 permisos predefinidos)
+- **Menú Dinámico**: ⭐ Sidebar que muestra solo aplicaciones autorizadas
 - **Notificaciones**: Sistema de alertas para usuarios
 - **Logs de Auditoría**: Historial completo con estadísticas
 
@@ -326,11 +327,12 @@ Permite a GitHub Copilot gestionar el repositorio.
 - [x] **Módulo de Usuarios**: CRUD completo con modales, filtros avanzados, paginación
 - [x] **Módulo de Unidades**: Árbol jerárquico interactivo con modales
 - [x] **Módulo de Roles**: ⭐ NUEVO - Gestión completa de roles y permisos
+- [x] **Menú Dinámico**: ⭐ NUEVO (3/Nov/2025) - Sidebar muestra solo apps con permisos
 - [x] **Layout Corporativo**: Sidebar + Header con logo de comandancia
 - [x] **SweetAlert2**: Confirmaciones elegantes para acciones destructivas
 - [x] **React Hot Toast**: Notificaciones modernas con colores corporativos
 - [x] **Patrón Modal**: Todos los formularios como modales emergentes
-- [x] **Servicios API**: 3 servicios refactorizados (usuarios, unidades, roles)
+- [x] **Servicios API**: 4 servicios (usuarios, unidades, roles, menu)
 - [x] **Build Optimizado**: 131.26 kB gzipped
 
 ### 🔄 En Desarrollo

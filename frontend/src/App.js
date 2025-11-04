@@ -17,6 +17,7 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import UsersListPage from './pages/usuarios/UsersListPage';
 import { UnitsTreePage } from './pages/unidades';
 import { RolesListPage } from './pages/roles';
+import { LogsViewerPage } from './pages/logs';
 
 function App() {
   return (
@@ -94,6 +95,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <RolesListPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/logs" 
+            element={
+              <ProtectedRoute>
+                <LogsViewerPage />
               </ProtectedRoute>
             } 
           />

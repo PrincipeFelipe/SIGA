@@ -62,7 +62,7 @@ const rolesService = {
      */
     async obtenerPermisos(id) {
         const response = await api.get(`/api/roles/${id}/permisos`);
-        return response.data.data;
+        return response.data.data.permisos;
     },
 
     /**
@@ -73,7 +73,7 @@ const rolesService = {
      */
     async asignarPermisos(id, permisosIds) {
         const response = await api.post(`/api/roles/${id}/permisos`, {
-            permisos_ids: permisosIds
+            permisos: permisosIds
         });
         return response.data;
     }

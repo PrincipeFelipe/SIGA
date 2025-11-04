@@ -49,13 +49,22 @@ const RolesListPage = () => {
   const handleEliminar = async (role) => {
     const result = await Swal.fire({
       title: '¿Eliminar rol?',
-      html: `¿Estás seguro de que deseas eliminar el rol <strong>${role.nombre}</strong>?<br/><small class="text-gray-500">Nivel jerárquico: ${role.nivel_jerarquico}</small>`,
+      html: `
+        <p style="color: #374151; margin-bottom: 8px;">
+          ¿Estás seguro de que deseas eliminar el rol <strong>${role.nombre}</strong>?
+        </p>
+        <p style="color: #6B7280; font-size: 14px;">Nivel jerárquico: ${role.nivel_jerarquico}</p>
+      `,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#C8102E',
       cancelButtonColor: '#6B7280',
       confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
+      buttonsStyling: true,
+      reverseButtons: false,
+      focusConfirm: false,
+      focusCancel: false
     });
 
     if (result.isConfirmed) {

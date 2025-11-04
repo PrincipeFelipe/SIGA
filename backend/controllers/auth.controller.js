@@ -239,6 +239,25 @@ async function me(req, res) {
             [usuario.id]
         );
         
+        // Obtener todos los permisos del usuario (combinados de todos sus roles)
+        const permisos = await query(
+            `SELECT DISTINCT p.accion
+            FROM Usuario_Roles_Alcance ura
+            INNER JOIN Roles r ON ura.rol_id = r.id
+            INNER JOIN Roles_Permisos rp ON r.id = rp.rol_id
+            INNER JOIN Permisos p ON rp.permiso_id = p.id
+            WHERE ura.usuario_id = ?
+              AND ura.activo = TRUE
+              AND r.activo = TRUE
+              AND p.activo = TRUE
+              AND (ura.fecha_fin IS NULL OR ura.fecha_fin >= CURDATE())
+            ORDER BY p.accion`,
+            [usuario.id]
+        );
+        
+        // Extraer solo las acciones de permisos en un array
+        const permisosArray = permisos.map(p => p.accion);
+        
         res.json({
             success: true,
             user: {
@@ -254,6 +273,7 @@ async function me(req, res) {
                     tipo: usuario.tipo_unidad
                 },
                 roles_alcance: rolesAlcance,
+                permisos: permisosArray,
                 require_password_change: usuario.require_password_change === 1,
                 ultimo_acceso: usuario.ultimo_acceso
             }
