@@ -293,6 +293,165 @@ module.exports = {
 - ✅ Modal (diálogos con overlay)
 - ✅ Badge (7 variantes de estado)
 - ✅ Loading (spinner con fullScreen)
+- ✅ TableActions (acciones con permisos)
+
+**Layout:**
+- ✅ Sidebar (navegación con iconos + menú dinámico)
+- ✅ Header (pendiente completar)
+- ✅ Layout (wrapper principal)
+
+**Autenticación:**
+- ✅ LoginPage (formulario completo)
+- ✅ ChangePasswordPage (con modo forzado)
+- ✅ ProtectedRoute (HOC para rutas)
+- ✅ AuthContext (login, logout, checkAuth, menú dinámico)
+
+**Servicios:**
+- ✅ api.js (Axios con interceptores 401/403/404/429/500)
+- ✅ authService.js (login, logout, me, changePassword)
+- ✅ menuService.js (obtenerMenu dinámico)
+- ✅ usuarioRolesService.js (gestión de roles con alcance)
+
+**Páginas CRUD:**
+- ✅ DashboardPage (estadísticas básicas)
+- ✅ UsersListPage (listado con filtros y permisos granulares)
+- ✅ UserFormModal (crear/editar + modo readOnly)
+- ✅ UserRolesModal (asignar roles con alcance)
+
+**Hooks Personalizados:**
+- ✅ usePermissions (verificación granular de permisos)
+  - hasPermission(), hasAnyPermission(), hasAllPermissions()
+  - Permisos específicos: can.viewUsers, can.editUsers, can.viewUserDetail, etc.
+
+**Características Avanzadas:**
+- ✅ Permisos granulares (botones específicos por permiso)
+- ✅ Modal de solo lectura (banner + campos disabled)
+- ✅ Combobox personalizado con búsqueda integrada
+- ✅ Filtrado jerárquico de usuarios según alcance
+- ✅ Menú dinámico según permisos del usuario
+- ✅ Click-outside detection para dropdowns
+- ✅ Auto-enfoque en campos de búsqueda
+
+**Estilos:**
+- ✅ Colores corporativos (#004E2E primary, #C8102E accent)
+- ✅ Fuentes: Inter (body), Montserrat (headings)
+- ✅ Animaciones: fadeIn, slideIn
+- ✅ Utilidades: btn-*, input-field, card, badge-*
+
+**Scripts de Testing:**
+- ✅ test-api.sh (prueba todos los endpoints)
+- ✅ test-user-permissions.sh (verifica permisos R84101K)
+- ✅ test-filtrado-jerarquico.sh (prueba alcance jerárquico)
+- ✅ test-menu.sh (prueba menú dinámico)
+- ✅ test-combobox-unidad.sh (documentación visual combobox)
+- ✅ demo-menu-dinamico.sh (demo interactiva)
+
+**Scripts de Gestión:**
+- ✅ start-all.sh (inicia backend + frontend)
+- ✅ stop-all.sh (detiene todos los servicios)
+
+**Estado:** Frontend funcional, corriendo en http://localhost:3000
+
+---
+
+### Documentación Completa Generada (4 de noviembre de 2025)
+
+**Guías de Usuario:**
+- ✅ GUIA-MENU-DINAMICO.md - Cómo usar el menú dinámico
+- ✅ SCRIPTS-INICIO.md - Uso de start-all.sh y stop-all.sh
+- ✅ CREDENCIALES-PRUEBA.md - Usuarios de prueba del sistema
+
+**Documentación Técnica:**
+- ✅ MENU-DINAMICO-IMPLEMENTADO.md - Implementación completa del menú
+- ✅ RESUMEN-MENU-DINAMICO.md - Resumen ejecutivo del menú
+- ✅ CORRECCIONES-PERMISOS-GRANULARES.md - Permisos granulares en UI
+- ✅ MODAL-SOLO-LECTURA.md - Modal readOnly con banner
+- ✅ MODULO-UNIDADES-COMPLETO.md - Documentación del módulo unidades
+
+**Debugging y Troubleshooting:**
+- ✅ DEBUG-MENU-FRONTEND.sh - Instrucciones de debugging
+- ✅ TROUBLESHOOTING-MENU.md - Solución de problemas del menú
+- ✅ verify-permissions.sh - Verificar permisos del backend
+
+**Pruebas y Checklists:**
+- ✅ CHECKLIST-PRUEBAS-FRONTEND.md - Lista de pruebas del frontend
+- ✅ PRUEBAS-COMPLETAS-24-OCT-2025.md - Resultados de pruebas
+- ✅ ITERACION-COMPLETADA-24-OCT-2025.md - Resumen de iteración
+
+---
+
+### Estado Actual (4 de noviembre de 2025)
+
+**✅ SISTEMA COMPLETAMENTE FUNCIONAL**
+
+**Backend (Puerto 5000):**
+- 40+ endpoints REST operativos
+- 9 tablas relacionales + 1 función SQL + 2 vistas
+- Autenticación JWT con cookies HttpOnly
+- Middleware de autorización jerárquica
+- Audit logging automático
+- Rate limiting configurado
+
+**Frontend (Puerto 3000):**
+- Sistema de login y autenticación completo
+- Dashboard con estadísticas
+- Módulo de usuarios con CRUD completo
+- Sistema de permisos granulares
+- Menú dinámico basado en permisos
+- Modal de solo lectura para usuarios sin permisos
+- Combobox personalizado con búsqueda integrada
+- Componentes reutilizables (Button, Card, Modal, Badge, etc.)
+
+**Servidores MCP:**
+- MCP MariaDB (puerto 4000) - Acceso a base de datos
+- MCP GitHub (puerto 4001) - Gestión del repositorio
+
+**Scripts Disponibles:**
+- `./start-all.sh` - Inicia todo el sistema
+- `./stop-all.sh` - Detiene todo el sistema
+- `./backend/test-*.sh` - Scripts de prueba automatizados
+
+**Características de Seguridad:**
+- JWT con expiración de 24 horas
+- Cookies HttpOnly para prevenir XSS
+- Bcrypt con 10 rounds para passwords
+- Rate limiting: 5 intentos login / 15 minutos
+- CORS configurado correctamente
+- Validación de entrada en todos los endpoints
+- Permisos granulares verificados en backend y frontend
+
+**Usuarios de Prueba:**
+```
+admin / Admin123!           → Acceso total (32 permisos)
+jefe.zona.norte / Password123! → Gestor de zona
+coord.huesca / Coord123!    → Coordinador
+R84101K / klandemo          → Usuario básico (6 permisos)
+```
+
+**Documentación:**
+- 20+ archivos de documentación
+- Scripts de prueba con ejemplos
+- Guías de troubleshooting
+- Documentación técnica completa
+
+---
+
+### Frontend Implementado (23 de octubre de 2025) [LEGACY]
+
+**Configuración Base:**
+- ✅ React 19.2.0 con Create React App
+- ✅ TailwindCSS 3.4.1 con identidad corporativa
+- ✅ React Router DOM 7.9.4
+- ✅ Axios 1.12.2 con interceptores
+- ✅ AuthContext para estado global
+
+**Componentes Comunes Creados:**
+- ✅ Button (6 variantes con loading state)
+- ✅ Input (con validación y errores)
+- ✅ Card (contenedor con header/footer)
+- ✅ Modal (diálogos con overlay)
+- ✅ Badge (7 variantes de estado)
+- ✅ Loading (spinner con fullScreen)
 
 **Layout:**
 - ✅ Sidebar (navegación con iconos)
@@ -322,13 +481,16 @@ module.exports = {
 
 ### Próximos Pasos Sugeridos
 1. ~~**Frontend React**~~ ✅ **COMPLETADO** - Base funcional con login y dashboard
-2. **Completar Header** - Usuario, notificaciones, logout
-3. **Páginas CRUD** - Usuarios, Unidades, Roles (listado, detalle, formularios)
-4. **Sistema de notificaciones** - Badge en header, panel de notificaciones
-5. **Logs Viewer** - Tabla con filtros y paginación
-6. **Documentación API** - Generar Swagger/OpenAPI docs
-7. **Tests automatizados** - Jest + Supertest para tests unitarios
-8. **CI/CD** - Configurar GitHub Actions
-9. **Despliegue** - Docker + docker-compose para staging/production
+2. ~~**Sistema de permisos granulares**~~ ✅ **COMPLETADO** - Hook usePermissions, filtrado jerárquico
+3. ~~**Modal de solo lectura**~~ ✅ **COMPLETADO** - UserFormModal con modo readOnly
+4. ~~**Combobox personalizado**~~ ✅ **COMPLETADO** - Selector de unidades con búsqueda integrada
+5. ~~**Menú dinámico**~~ ✅ **COMPLETADO** - Sidebar basado en permisos del usuario
+6. **Completar Header** - Usuario, notificaciones, logout
+7. **Sistema de notificaciones** - Badge en header, panel de notificaciones
+8. **Logs Viewer** - Tabla con filtros y paginación
+9. **Documentación API** - Generar Swagger/OpenAPI docs
+10. **Tests automatizados** - Jest + Supertest para tests unitarios
+11. **CI/CD** - Configurar GitHub Actions
+12. **Despliegue** - Docker + docker-compose para staging/production
 
 ---
