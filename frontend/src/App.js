@@ -18,6 +18,7 @@ import UsersListPage from './pages/usuarios/UsersListPage';
 import { UnitsTreePage } from './pages/unidades';
 import { RolesListPage } from './pages/roles';
 import { LogsViewerPage } from './pages/logs';
+import { TasksListPage } from './pages/tareas';
 
 function App() {
   return (
@@ -104,6 +105,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <LogsViewerPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/tareas" 
+            element={
+              <ProtectedRoute>
+                <TasksListPage />
               </ProtectedRoute>
             } 
           />

@@ -72,6 +72,11 @@ const unidadesService = {
     async delete(id) {
         const response = await api.delete(`/api/unidades/${id}`);
         return response.data;
+    },
+
+    // Alias para mantener compatibilidad con diferentes nomenclaturas
+    listarPlanas: async function() {
+        return this.getFlat();
     }
 };
 

@@ -2,49 +2,43 @@
 // PÁGINA DASHBOARD - Panel principal
 // ============================================================================
 
-import React from 'react';
-import { FiUsers, FiLayers, FiShield, FiActivity } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiUsers, FiLayers, FiCheckSquare, FiAlertCircle } from 'react-icons/fi';
 import Layout from '../../components/layout/Layout';
-import { Card, Badge } from '../../components/common';
+import { Card, Badge, Loading } from '../../components/common';
 import { useAuth } from '../../contexts/AuthContext';
+import dashboardService from '../../services/dashboardService';
 
 const DashboardPage = () => {
     const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [estadisticas, setEstadisticas] = useState(null);
     
-    const stats = [
-        {
-            title: 'Usuarios',
-            value: '248',
-            change: '+12%',
-            icon: FiUsers,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-100',
-        },
-        {
-            title: 'Unidades',
-            value: '30',
-            change: '+5%',
-            icon: FiLayers,
-            color: 'text-green-600',
-            bgColor: 'bg-green-100',
-        },
-        {
-            title: 'Roles',
-            value: '12',
-            change: '0%',
-            icon: FiShield,
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-100',
-        },
-        {
-            title: 'Actividad Hoy',
-            value: '1,234',
-            change: '+28%',
-            icon: FiActivity,
-            color: 'text-orange-600',
-            bgColor: 'bg-orange-100',
-        },
-    ];
+    // Cargar estadísticas al montar el componente
+    useEffect(() => {
+        cargarEstadisticas();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    
+    const cargarEstadisticas = async () => {
+        try {
+            setLoading(true);
+            const data = await dashboardService.obtenerEstadisticas();
+            setEstadisticas(data);
+        } catch (error) {
+            console.error('Error al cargar estadísticas:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    if (loading) {
+        return (
+            <Layout>
+                <Loading fullScreen />
+            </Layout>
+        );
+    }
     
     return (
         <Layout>
@@ -59,34 +53,215 @@ const DashboardPage = () => {
                     </p>
                 </div>
                 
-                {/* Estadísticas */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {stats.map((stat) => {
-                        const Icon = stat.icon;
-                        return (
-                            <Card key={stat.title} padding={false}>
-                                <div className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                                            <Icon className={`${stat.color}`} size={24} />
+                {/* Estadísticas según permisos */}
+                <div className="space-y-6">
+                    {/* TAREAS PROPIAS - Siempre visible si hay datos */}
+                    {estadisticas && estadisticas.tareasPropias && (
+                        <div>
+                            <h2 className="text-xl font-heading font-bold text-text mb-4">
+                                📋 Mis Tareas
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <Card padding={false}>
+                                    <div className="p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="p-3 rounded-lg bg-blue-100">
+                                                <FiCheckSquare className="text-blue-600" size={24} />
+                                            </div>
                                         </div>
-                                        <Badge 
-                                            variant={stat.change.startsWith('+') ? 'success' : 'default'}
-                                            size="sm"
-                                        >
-                                            {stat.change}
-                                        </Badge>
+                                        <h3 className="text-2xl font-bold text-text mb-1">
+                                            {estadisticas.tareasPropias.total}
+                                        </h3>
+                                        <p className="text-sm text-gray-600">Total</p>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-text mb-1">
-                                        {stat.value}
-                                    </h3>
-                                    <p className="text-sm text-gray-600">
-                                        {stat.title}
-                                    </p>
-                                </div>
-                            </Card>
-                        );
-                    })}
+                                </Card>
+                                
+                                <Card padding={false}>
+                                    <div className="p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="p-3 rounded-lg bg-yellow-100">
+                                                <FiAlertCircle className="text-yellow-600" size={24} />
+                                            </div>
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-text mb-1">
+                                            {estadisticas.tareasPropias.pendientes}
+                                        </h3>
+                                        <p className="text-sm text-gray-600">Pendientes</p>
+                                    </div>
+                                </Card>
+                                
+                                <Card padding={false}>
+                                    <div className="p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="p-3 rounded-lg bg-blue-100">
+                                                <FiCheckSquare className="text-blue-600" size={24} />
+                                            </div>
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-text mb-1">
+                                            {estadisticas.tareasPropias.en_progreso}
+                                        </h3>
+                                        <p className="text-sm text-gray-600">En Progreso</p>
+                                    </div>
+                                </Card>
+                                
+                                <Card padding={false}>
+                                    <div className="p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="p-3 rounded-lg bg-green-100">
+                                                <FiCheckSquare className="text-green-600" size={24} />
+                                            </div>
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-text mb-1">
+                                            {estadisticas.tareasPropias.completadas}
+                                        </h3>
+                                        <p className="text-sm text-gray-600">Completadas</p>
+                                    </div>
+                                </Card>
+                                
+                                <Card padding={false}>
+                                    <div className="p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="p-3 rounded-lg bg-red-100">
+                                                <FiAlertCircle className="text-red-600" size={24} />
+                                            </div>
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-text mb-1">
+                                            {estadisticas.tareasPropias.vencidas}
+                                        </h3>
+                                        <p className="text-sm text-gray-600">Vencidas</p>
+                                    </div>
+                                </Card>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* ESTADÍSTICAS JERÁRQUICAS - Solo si tiene permisos */}
+                    {(estadisticas?.usuarios || estadisticas?.unidades || estadisticas?.tareas) && (
+                        <div>
+                            <h2 className="text-xl font-heading font-bold text-text mb-4 flex items-center gap-2">
+                                📊 Mi Ámbito de Gestión
+                                <Badge variant="info" size="sm">Incluye unidades dependientes</Badge>
+                            </h2>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {/* Estadísticas de Usuarios */}
+                                {estadisticas?.usuarios && (
+                                    <Card title="👥 Usuarios" padding={false}>
+                                        <div className="p-6 space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Total</span>
+                                                <span className="text-2xl font-bold text-text">
+                                                    {estadisticas.usuarios.total}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-gray-600">Activos</span>
+                                                <Badge variant="success">
+                                                    {estadisticas.usuarios.activos}
+                                                </Badge>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-gray-600">Inactivos</span>
+                                                <Badge variant="danger">
+                                                    {estadisticas.usuarios.inactivos}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                )}
+                                
+                                {/* Estadísticas de Unidades */}
+                                {estadisticas?.unidades && (
+                                    <Card title="🏢 Unidades" padding={false}>
+                                        <div className="p-6 space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Total</span>
+                                                <span className="text-2xl font-bold text-text">
+                                                    {estadisticas.unidades.total}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                {estadisticas.unidades.zonas > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Zonas</span>
+                                                        <Badge variant="info" size="sm">
+                                                            {estadisticas.unidades.zonas}
+                                                        </Badge>
+                                                    </div>
+                                                )}
+                                                {estadisticas.unidades.comandancias > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Comandancias</span>
+                                                        <Badge variant="info" size="sm">
+                                                            {estadisticas.unidades.comandancias}
+                                                        </Badge>
+                                                    </div>
+                                                )}
+                                                {estadisticas.unidades.companias > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Compañías</span>
+                                                        <Badge variant="info" size="sm">
+                                                            {estadisticas.unidades.companias}
+                                                        </Badge>
+                                                    </div>
+                                                )}
+                                                {estadisticas.unidades.puestos > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Puestos</span>
+                                                        <Badge variant="info" size="sm">
+                                                            {estadisticas.unidades.puestos}
+                                                        </Badge>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Card>
+                                )}
+                                
+                                {/* Estadísticas de Tareas */}
+                                {estadisticas?.tareas && (
+                                    <Card title="📋 Tareas del Ámbito" padding={false}>
+                                        <div className="p-6 space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Total</span>
+                                                <span className="text-2xl font-bold text-text">
+                                                    {estadisticas.tareas.total}
+                                                </span>
+                                            </div>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-600">Pendientes</span>
+                                                    <Badge variant="warning">
+                                                        {estadisticas.tareas.pendientes}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-600">En Progreso</span>
+                                                    <Badge variant="info">
+                                                        {estadisticas.tareas.en_progreso}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-600">Completadas</span>
+                                                    <Badge variant="success">
+                                                        {estadisticas.tareas.completadas}
+                                                    </Badge>
+                                                </div>
+                                                {estadisticas.tareas.vencidas > 0 && (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-gray-600">Vencidas</span>
+                                                        <Badge variant="danger">
+                                                            {estadisticas.tareas.vencidas}
+                                                        </Badge>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Card>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 
                 {/* Información del usuario */}
@@ -106,6 +281,12 @@ const DashboardPage = () => {
                                 <p className="font-medium text-text">{user?.email || 'No especificado'}</p>
                             </div>
                             <div>
+                                <p className="text-sm text-gray-600">Unidad de Destino</p>
+                                <p className="font-medium text-text">
+                                    {user?.unidad_destino?.nombre || 'No especificada'}
+                                </p>
+                            </div>
+                            <div>
                                 <p className="text-sm text-gray-600">Estado</p>
                                 <Badge variant={user?.activo ? 'success' : 'danger'}>
                                     {user?.activo ? 'Activo' : 'Inactivo'}
@@ -117,43 +298,47 @@ const DashboardPage = () => {
                     <Card title="Accesos Rápidos">
                         <div className="space-y-2">
                             <a
-                                href="/usuarios"
+                                href="/tareas"
                                 className="block p-3 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 <div className="flex items-center gap-3">
-                                    <FiUsers className="text-primary" size={20} />
+                                    <FiCheckSquare className="text-primary" size={20} />
                                     <div>
-                                        <p className="font-medium text-text">Gestión de Usuarios</p>
-                                        <p className="text-sm text-gray-600">Ver y administrar usuarios</p>
+                                        <p className="font-medium text-text">Gestión de Tareas</p>
+                                        <p className="text-sm text-gray-600">Ver y administrar tareas</p>
                                     </div>
                                 </div>
                             </a>
                             
-                            <a
-                                href="/unidades"
-                                className="block p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <FiLayers className="text-primary" size={20} />
-                                    <div>
-                                        <p className="font-medium text-text">Unidades Organizacionales</p>
-                                        <p className="text-sm text-gray-600">Ver estructura jerárquica</p>
+                            {estadisticas?.usuarios && (
+                                <a
+                                    href="/usuarios"
+                                    className="block p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <FiUsers className="text-primary" size={20} />
+                                        <div>
+                                            <p className="font-medium text-text">Gestión de Usuarios</p>
+                                            <p className="text-sm text-gray-600">Ver y administrar usuarios</p>
+                                        </div>
                                     </div>
-                                </div>
-                            </a>
+                                </a>
+                            )}
                             
-                            <a
-                                href="/roles"
-                                className="block p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <FiShield className="text-primary" size={20} />
-                                    <div>
-                                        <p className="font-medium text-text">Roles y Permisos</p>
-                                        <p className="text-sm text-gray-600">Administrar control de acceso</p>
+                            {estadisticas?.unidades && (
+                                <a
+                                    href="/unidades"
+                                    className="block p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <FiLayers className="text-primary" size={20} />
+                                        <div>
+                                            <p className="font-medium text-text">Unidades Organizacionales</p>
+                                            <p className="text-sm text-gray-600">Ver estructura jerárquica</p>
+                                        </div>
                                     </div>
-                                </div>
-                            </a>
+                                </a>
+                            )}
                         </div>
                     </Card>
                 </div>
@@ -163,3 +348,4 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
+

@@ -86,6 +86,20 @@ export const usePermissions = () => {
         viewNotifications: hasPermission('notifications:view'),
         createNotifications: hasPermission('notifications:create'),
         
+        // Tareas
+        viewTasks: hasPermission('tasks:view'),
+        viewAllTasks: hasPermission('tasks:view_all'),
+        viewOwnTasks: hasPermission('tasks:view_own'),
+        createTasks: hasPermission('tasks:create'),
+        assignTasks: hasPermission('tasks:assign'),
+        editTasks: hasPermission('tasks:edit'),
+        editOwnTasks: hasPermission('tasks:edit_own'),
+        deleteTasks: hasPermission('tasks:delete'),
+        changeTaskStatus: hasPermission('tasks:change_status'),
+        commentTasks: hasPermission('tasks:comment'),
+        viewTaskHistory: hasPermission('tasks:view_history'),
+        exportTasks: hasPermission('tasks:export'),
+        
         // Módulos
         accessAdmin: hasPermission('module:admin'),
         accessDashboard: hasPermission('module:dashboard'),

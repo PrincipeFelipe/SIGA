@@ -55,7 +55,7 @@ app.use(cookieParser());
 // Rate limiting (protección contra fuerza bruta)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // Límite de 100 requests por ventana
+    max: process.env.NODE_ENV === 'development' ? 1000 : 100, // Límite alto en desarrollo
     message: 'Demasiadas solicitudes desde esta IP, intente de nuevo más tarde',
     standardHeaders: true,
     legacyHeaders: false
@@ -107,6 +107,10 @@ app.use('/api', requirePasswordChange);
 const menuRoutes = require('./routes/menu.routes');
 app.use('/api/menu', menuRoutes);
 
+// Dashboard principal
+const dashboardRoutes = require('./routes/dashboard.routes');
+app.use('/api/dashboard', dashboardRoutes);
+
 // Gestión de usuarios
 const usuariosRoutes = require('./routes/usuarios.routes');
 app.use('/api/usuarios', usuariosRoutes);
@@ -126,6 +130,10 @@ app.use('/api/permisos', permisosRoutes);
 // Asignación de roles y alcances
 const rolesAlcanceRoutes = require('./routes/roles-alcance.routes');
 app.use('/api/usuarios', rolesAlcanceRoutes);
+
+// Gestión de tareas
+const tareasRoutes = require('./routes/tareas.routes');
+app.use('/api/tareas', tareasRoutes);
 
 // Notificaciones
 const notificacionesRoutes = require('./routes/notificaciones.routes');

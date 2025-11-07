@@ -241,6 +241,34 @@ curl -X POST http://localhost:5000/api/auth/login \
 ### Menú Dinámico
 - `GET /api/menu` - Obtener menú según permisos del usuario
 
+### Dashboard Principal ✨ **NUEVO**
+- `GET /api/dashboard/estadisticas` - **Estadísticas personalizadas según permisos** ⭐
+
+**Características especiales:**
+- ✅ Administradores ven estadísticas completas de su jerarquía (usuarios, unidades, tareas)
+- ✅ Usuarios normales ven estadísticas de su ámbito según permisos
+- ✅ Todos los usuarios ven sus tareas propias
+- ✅ Filtrado jerárquico automático
+- ✅ UI adaptativa con secciones condicionales
+
+### Gestión de Tareas ✨ **NUEVO**
+- `GET /api/tareas` - Listar tareas (filtrado jerárquico)
+- `GET /api/tareas/estadisticas?global={true|false}` - **Estadísticas jerárquicas** ⭐
+- `GET /api/tareas/:id` - Obtener tarea por ID
+- `POST /api/tareas` - Crear tarea
+- `PUT /api/tareas/:id` - Actualizar tarea
+- `DELETE /api/tareas/:id` - Eliminar tarea
+- `POST /api/tareas/:id/comentarios` - Añadir comentario
+
+**Características especiales:**
+- ✅ Filtrado jerárquico basado en alcance del usuario
+- ✅ Campo `es_241` (SI/NO) con cálculo automático de 90 días
+- ✅ Campo `numero_registro` único (formato: 000000000x00X0000000-X)
+- ✅ Triggers automáticos para fecha límite
+- ✅ **Dashboard con estadísticas duales:**
+  - **"Mis Tareas"** - Estadísticas personales
+  - **"Tareas de mi Ámbito"** - Estadísticas jerárquicas (incluye descendientes)
+
 ---
 
 ## 👥 Usuarios de Prueba
@@ -269,6 +297,7 @@ Todos los usuarios tienen la contraseña: **`Password123!`**
 7. **Aplicaciones** - Módulos del sidebar con permisos
 8. **Notificaciones** - Alertas para usuarios
 9. **Logs** - Registro de auditoría
+10. **Tareas** - ✨ Gestión de tareas con filtrado jerárquico
 
 ### Función SQL Clave
 ```sql
@@ -568,5 +597,7 @@ El frontend implementa la identidad visual de la Guardia Civil:
 | 2025-10-22 | Backend 100% completo - 40+ endpoints implementados |
 | 2025-10-23 | Frontend React completo - Login, Dashboard, componentes base |
 | 2025-10-23 | Identidad corporativa Guardia Civil aplicada en frontend |
+| 2025-11-05 | Módulo de Gestión de Tareas implementado (backend + frontend) |
+| 2025-11-06 | **Estadísticas Jerárquicas implementadas** - Dashboard dual con filtrado por alcance ⭐ |
 
 ---

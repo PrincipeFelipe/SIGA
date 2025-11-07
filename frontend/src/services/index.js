@@ -11,3 +11,5 @@ export { default as usuarioRolesService } from './usuarioRolesService';
 export { default as notificacionesService } from './notificacionesService';
 export { default as logsService } from './logsService';
 export { default as menuService } from './menuService';
+export { default as tareasService } from './tareasService';
+

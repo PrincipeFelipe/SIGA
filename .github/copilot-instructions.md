@@ -434,6 +434,25 @@ R84101K / klandemo          → Usuario básico (6 permisos)
 - Guías de troubleshooting
 - Documentación técnica completa
 
+**Módulos Implementados:**
+1. ✅ **Usuarios** - CRUD con filtrado jerárquico
+2. ✅ **Unidades** - Árbol organizacional
+3. ✅ **Roles y Permisos** - Sistema RBAC completo
+4. ✅ **Tareas** - Gestión de tareas con filtrado jerárquico ⭐
+   - Dashboard con estadísticas duales (personal + jerárquicas)
+   - Campo es_241 con cálculo automático de 90 días
+   - Triggers de base de datos
+   - Filtrado por alcance organizacional
+
+**Últimas Implementaciones (6 de noviembre de 2025):**
+- ✅ **Estadísticas Jerárquicas** - Dashboard dual con:
+  - Sección "Mis Tareas" (estadísticas personales)
+  - Sección "Tareas de mi Ámbito" (estadísticas filtradas jerárquicamente)
+  - Badge "Incluye unidades dependientes"
+  - Filtrado automático según permisos (tasks:view_all, tasks:view, tasks:view_own)
+  - Verificación con script: `backend/test-estadisticas-jerarquicas.sh`
+  - Documentación completa: `ESTADISTICAS-JERARQUICAS-COMPLETADO.md`
+
 ---
 
 ### Frontend Implementado (23 de octubre de 2025) [LEGACY]

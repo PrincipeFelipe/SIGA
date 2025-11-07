@@ -17,22 +17,26 @@ async function listar(req, res) {
     try {
         const { search, unidad_id, activo, page = 1, limit = 50 } = req.query;
         
-        // Obtener unidades accesibles para el usuario actual
-        const unidades_accesibles = await obtenerUnidadesAccesibles(
-            req.user.id,
-            'users:view'
+        // Verificar si el usuario tiene permiso para ver todos los usuarios
+        const permisoVerTodos = await query(
+            `SELECT COUNT(*) as tiene_permiso
+            FROM Usuario_Roles_Alcance ura
+            INNER JOIN Roles r ON ura.rol_id = r.id
+            INNER JOIN Roles_Permisos rp ON r.id = rp.rol_id
+            INNER JOIN Permisos p ON rp.permiso_id = p.id
+            WHERE ura.usuario_id = ?
+              AND p.accion = 'users:view_all'
+              AND ura.activo = TRUE
+              AND r.activo = TRUE
+              AND p.activo = TRUE`,
+            [req.user.id]
         );
         
-        if (unidades_accesibles.length === 0) {
-            return res.json({
-                success: true,
-                data: [],
-                total: 0,
-                message: 'No tiene acceso a ninguna unidad'
-            });
-        }
+        const puedeVerTodos = permisoVerTodos[0].tiene_permiso > 0;
         
-        // Construir query con filtros
+        console.log('[USUARIOS] Usuario:', req.user.id, 'Puede ver todos:', puedeVerTodos);
+        
+        // Construir query base
         let sql = `
             SELECT 
                 u.id,
@@ -48,8 +52,27 @@ async function listar(req, res) {
                 un.tipo_unidad
             FROM Usuarios u
             INNER JOIN Unidades un ON u.unidad_destino_id = un.id
-            WHERE u.unidad_destino_id IN (${unidades_accesibles.join(',')})
+            WHERE 1=1
         `;
+        
+        // Si NO tiene permiso para ver todos, aplicar filtrado jerárquico
+        if (!puedeVerTodos) {
+            const unidades_accesibles = await obtenerUnidadesAccesibles(
+                req.user.id,
+                'users:view'
+            );
+            
+            if (unidades_accesibles.length === 0) {
+                return res.json({
+                    success: true,
+                    data: [],
+                    total: 0,
+                    message: 'No tiene acceso a ninguna unidad'
+                });
+            }
+            
+            sql += ` AND u.unidad_destino_id IN (${unidades_accesibles.join(',')})`;
+        }
         
         const params = [];
         
@@ -80,14 +103,27 @@ async function listar(req, res) {
         sql += ` LIMIT ? OFFSET ?`;
         params.push(parseInt(limit), parseInt(offset));
         
+        console.log('[USUARIOS] SQL:', sql.replace(/\s+/g, ' '));
+        console.log('[USUARIOS] Params:', params);
+        
         const usuarios = await query(sql, params);
+        console.log('[USUARIOS] Usuarios encontrados:', usuarios.length);
         
         // Obtener total (sin paginación)
         let countSql = `
             SELECT COUNT(*) as total
             FROM Usuarios u
-            WHERE u.unidad_destino_id IN (${unidades_accesibles.join(',')})
+            WHERE 1=1
         `;
+        
+        // Aplicar mismo filtro jerárquico que en la query principal
+        if (!puedeVerTodos) {
+            const unidades_accesibles = await obtenerUnidadesAccesibles(
+                req.user.id,
+                'users:view'
+            );
+            countSql += ` AND u.unidad_destino_id IN (${unidades_accesibles.join(',')})`;
+        }
         
         if (search) {
             countSql += ` AND (u.username LIKE ? OR u.nombre_completo LIKE ? OR u.email LIKE ?)`;

@@ -12,7 +12,8 @@ import {
     FiFileText,
     FiLayers,
     FiBarChart2,
-    FiGrid
+    FiGrid,
+    FiCheckSquare
 } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -67,7 +68,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         'icon-shield': FiShield,
         'icon-chart-bar': FiBarChart2,
         'icon-history': FiFileText,
-        'icon-grid': FiGrid
+        'icon-grid': FiGrid,
+        'icon-check-square': FiCheckSquare
     };
     
     // Usar el menú del contexto directamente
