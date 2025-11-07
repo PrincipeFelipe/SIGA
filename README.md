@@ -598,6 +598,7 @@ El frontend implementa la identidad visual de la Guardia Civil:
 | 2025-10-23 | Frontend React completo - Login, Dashboard, componentes base |
 | 2025-10-23 | Identidad corporativa Guardia Civil aplicada en frontend |
 | 2025-11-05 | Módulo de Gestión de Tareas implementado (backend + frontend) |
+| 2025-11-07 | Permisos `users:view_all` y `units:view_all` agregados - Admin ve todos los datos |
 | 2025-11-06 | **Estadísticas Jerárquicas implementadas** - Dashboard dual con filtrado por alcance ⭐ |
 
 ---

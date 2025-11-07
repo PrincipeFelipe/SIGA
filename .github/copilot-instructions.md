@@ -444,7 +444,16 @@ R84101K / klandemo          → Usuario básico (6 permisos)
    - Triggers de base de datos
    - Filtrado por alcance organizacional
 
-**Últimas Implementaciones (6 de noviembre de 2025):**
+**Últimas Implementaciones (7 de noviembre de 2025):**
+- ✅ **Permisos Globales** - Agregados `users:view_all` y `units:view_all`:
+  - Admin ahora tiene permiso `users:view_all` para ver todos los usuarios sin filtrado jerárquico
+  - Admin tiene permiso `units:view_all` para ver todas las unidades del sistema
+  - Modificado `usuarios.controller.js` para verificar permisos antes de aplicar filtrado
+  - Dashboard principal muestra estadísticas correctas según alcance del usuario
+  - Admin ve 10/10 usuarios (incluyendo R84101K en Ceuta y jefe.zona.norte en Andalucía)
+  - Verificación con script: `backend/test-user-permissions.sh`
+  - Documentación: Logs de depuración agregados en controladores
+
 - ✅ **Estadísticas Jerárquicas** - Dashboard dual con:
   - Sección "Mis Tareas" (estadísticas personales)
   - Sección "Tareas de mi Ámbito" (estadísticas filtradas jerárquicamente)
