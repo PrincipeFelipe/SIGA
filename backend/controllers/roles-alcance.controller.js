@@ -25,23 +25,41 @@ const listarPorUsuario = async (req, res) => {
             });
         }
 
-        // Verificar que el usuario autenticado tiene permiso para ver este usuario
-        // (debe estar dentro de su alcance jerárquico)
-        const unidadesAccesibles = await obtenerUnidadesAccesibles(
-            req.user.id,
-            'user_roles:view'
+        // Verificar permiso user_roles:view_all (acceso global)
+        const permisoVerTodos = await query(
+            `SELECT COUNT(*) as tiene_permiso
+            FROM Usuario_Roles_Alcance ura
+            INNER JOIN Roles r ON ura.rol_id = r.id
+            INNER JOIN Roles_Permisos rp ON r.id = rp.rol_id
+            INNER JOIN Permisos p ON rp.permiso_id = p.id
+            WHERE ura.usuario_id = ?
+              AND p.accion = 'user_roles:view_all'
+              AND ura.activo = TRUE
+              AND r.activo = TRUE
+              AND p.activo = TRUE`,
+            [req.user.id]
         );
+        
+        const puedeVerTodos = permisoVerTodos[0].tiene_permiso > 0;
+        
+        // Si NO tiene permiso global, verificar alcance jerárquico
+        if (!puedeVerTodos) {
+            const unidadesAccesibles = await obtenerUnidadesAccesibles(
+                req.user.id,
+                'user_roles:view'
+            );
 
-        const [usuarioTarget] = await query(
-            'SELECT unidad_destino_id FROM Usuarios WHERE id = ?',
-            [usuarioId]
-        );
+            const [usuarioTarget] = await query(
+                'SELECT unidad_destino_id FROM Usuarios WHERE id = ?',
+                [usuarioId]
+            );
 
-        if (!unidadesAccesibles.includes(usuarioTarget.unidad_destino_id)) {
-            return res.status(403).json({
-                success: false,
-                message: 'No tienes permiso para ver los roles de este usuario'
-            });
+            if (!unidadesAccesibles.includes(usuarioTarget.unidad_destino_id)) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'No tienes permiso para ver los roles de este usuario'
+                });
+            }
         }
 
         // Obtener roles y alcances del usuario
