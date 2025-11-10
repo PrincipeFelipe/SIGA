@@ -528,14 +528,14 @@ R84101K / klandemo          → Usuario básico (6 permisos)
 
 **Estado:** Frontend funcional, corriendo en http://localhost:3000
 
-### Próximos Pasos Sugeridos
+**Próximos Pasos Sugeridos**
 1. ~~**Frontend React**~~ ✅ **COMPLETADO** - Base funcional con login y dashboard
 2. ~~**Sistema de permisos granulares**~~ ✅ **COMPLETADO** - Hook usePermissions, filtrado jerárquico
 3. ~~**Modal de solo lectura**~~ ✅ **COMPLETADO** - UserFormModal con modo readOnly
 4. ~~**Combobox personalizado**~~ ✅ **COMPLETADO** - Selector de unidades con búsqueda integrada
 5. ~~**Menú dinámico**~~ ✅ **COMPLETADO** - Sidebar basado en permisos del usuario
-6. **Completar Header** - Usuario, notificaciones, logout
-7. **Sistema de notificaciones** - Badge en header, panel de notificaciones
+6. ~~**Sistema de notificaciones**~~ ✅ **COMPLETADO** - NotificationBell, NotificationItem, NotificationListPage
+7. **WebSockets para notificaciones** - Tiempo real sin polling
 8. **Logs Viewer** - Tabla con filtros y paginación
 9. **Documentación API** - Generar Swagger/OpenAPI docs
 10. **Tests automatizados** - Jest + Supertest para tests unitarios

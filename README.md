@@ -431,6 +431,10 @@ Este proyecto está en desarrollo activo. Para contribuir:
 | 2025-10-24 | ✅ **Frontend CRUD usuarios completado**: UserFormPage con validaciones, sistema de toasts (4 variantes), integración completa |
 | 2025-10-24 | ✅ **Mejoras de Layout**: Header sticky, Sidebar fixed 100% altura, logo de comandancia, scroll independiente |
 | 2025-10-24 | 🎉 **REFACTORIZACIÓN COMPLETA**: 3 módulos con patrón modal (Usuarios, Unidades, Roles), SweetAlert2, react-hot-toast, build 131KB |
+| 2025-11-07 | ✅ **Permisos Globales**: users:view_all, units:view_all, user_roles:view_all para administradores |
+| 2025-11-07 | ✅ **Estadísticas Jerárquicas**: Dashboard dual con estadísticas personales y de ámbito organizacional |
+| 2025-11-10 | ⭐ **Sistema de Alertas Automáticas (Backend)**: Triggers, events programados, 5 tipos de notificaciones |
+| 2025-11-10 | ⭐ **Sistema de Notificaciones (Frontend)**: NotificationBell, polling 30s, filtros, paginación |
 
 ---
 
@@ -448,7 +452,7 @@ Este proyecto está bajo la Licencia MIT. Ver archivo `LICENSE` para más detall
 
 ---
 
-**Estado actual:** ✅ **Backend 100% funcional** | ✅ **Frontend 3 módulos completados** | 🔄 **Listo para testing**
+**Estado actual:** ✅ **Backend 100% funcional** | ✅ **Frontend 4 módulos + notificaciones** | ⭐ **Sistema de alertas automáticas completo**
 
 ## 📦 Instalación y ejecución
 
