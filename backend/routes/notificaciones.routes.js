@@ -11,8 +11,8 @@ router.get('/',
     notificacionesController.listar
 );
 
-// GET /api/notificaciones/no-leidas - Contar notificaciones no leídas
-router.get('/no-leidas',
+// GET /api/notificaciones/contador - Contar notificaciones no leídas
+router.get('/contador',
     notificacionesController.contarNoLeidas
 );
 
@@ -21,13 +21,13 @@ router.get('/:id',
     notificacionesController.obtenerPorId
 );
 
-// POST /api/notificaciones/:id/leer - Marcar notificación como leída
-router.post('/:id/leer',
+// PATCH /api/notificaciones/:id/marcar-leida - Marcar notificación como leída
+router.patch('/:id/marcar-leida',
     notificacionesController.marcarComoLeida
 );
 
-// POST /api/notificaciones/leer-todas - Marcar todas como leídas
-router.post('/leer-todas',
+// PATCH /api/notificaciones/marcar-todas-leidas - Marcar todas como leídas
+router.patch('/marcar-todas-leidas',
     notificacionesController.marcarTodasComoLeidas
 );
 

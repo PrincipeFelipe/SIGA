@@ -137,7 +137,7 @@ app.use('/api/tareas', tareasRoutes);
 
 // Notificaciones
 const notificacionesRoutes = require('./routes/notificaciones.routes');
-app.use('/api/notificaciones', notificacionesRoutes);
+app.use('/notificaciones', authenticate, notificacionesRoutes);
 
 // Logs de auditoría
 const logsRoutes = require('./routes/logs.routes');

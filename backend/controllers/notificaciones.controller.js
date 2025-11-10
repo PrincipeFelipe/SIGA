@@ -146,7 +146,7 @@ const marcarComoLeida = async (req, res) => {
 
         // Marcar como leída
         await query(
-            'UPDATE Notificaciones SET leida = 1, fecha_leida = NOW() WHERE id = ?',
+            'UPDATE Notificaciones SET leida = 1, leida_at = NOW() WHERE id = ?',
             [id]
         );
 
@@ -177,7 +177,7 @@ const marcarComoLeida = async (req, res) => {
 const marcarTodasComoLeidas = async (req, res) => {
     try {
         const result = await query(
-            'UPDATE Notificaciones SET leida = 1, fecha_leida = NOW() WHERE usuario_id = ? AND leida = 0',
+            'UPDATE Notificaciones SET leida = 1, leida_at = NOW() WHERE usuario_id = ? AND leida = 0',
             [req.user.id]
         );
 
