@@ -444,17 +444,38 @@ R84101K / klandemo          → Usuario básico (6 permisos)
    - Triggers de base de datos
    - Filtrado por alcance organizacional
 
-**Últimas Implementaciones (7 de noviembre de 2025):**
-- ✅ **Permisos Globales** - Agregados `users:view_all` y `units:view_all`:
+**Últimas Implementaciones (10 de noviembre de 2025):**
+
+- ✅ **Sistema de Alertas Automáticas** - ⭐ Completado al 100% en backend:
+  - **Triggers en Base de Datos:**
+    - `after_tarea_insert`: Notifica al usuario cuando se le asigna una tarea
+    - `after_tarea_update`: Notifica en reasignación (a ambos usuarios) y completación (al creador)
+  - **Events Programados (MariaDB):**
+    - `check_tareas_proximas_vencer`: Ejecuta diariamente a las 8:00 AM, alerta tareas que vencen en 0-3 días
+    - `check_tareas_vencidas`: Ejecuta diariamente a las 9:00 AM, alerta tareas vencidas no completadas
+  - **Tipos de Notificaciones:**
+    - `info`: Información general, reasignaciones
+    - `warning`: Tareas próximas a vencer (2-3 días), prioridad media/alta
+    - `error`: Tareas vencidas, prioridad urgente, tareas que vencen hoy/mañana
+    - `success`: Tareas completadas
+  - **Endpoints API:** Sistema completo de notificaciones (listar, marcar leída, contador, eliminar)
+  - **Pruebas Realizadas:**
+    - ✅ Trigger asignación: Notificaciones ID 4, 7 generadas automáticamente
+    - ✅ Mapeo de prioridad: Urgente → error, Alta → warning
+    - ✅ Alertas próximas a vencer: 2 tareas detectadas, 2 notificaciones generadas
+    - ✅ Alerta de tarea vencida: Notificación ID 8 generada
+  - **Estado:** Backend 100% funcional, frontend pendiente (componentes NotificationBell, NotificationItem, NotificationList)
+  - **Documentación:** `SISTEMA-ALERTAS-COMPLETADO.md` (resumen completo con 350+ líneas SQL)
+
+- ✅ **Permisos Globales** (7 de noviembre de 2025):
   - Admin ahora tiene permiso `users:view_all` para ver todos los usuarios sin filtrado jerárquico
   - Admin tiene permiso `units:view_all` para ver todas las unidades del sistema
   - Modificado `usuarios.controller.js` para verificar permisos antes de aplicar filtrado
   - Dashboard principal muestra estadísticas correctas según alcance del usuario
   - Admin ve 10/10 usuarios (incluyendo R84101K en Ceuta y jefe.zona.norte en Andalucía)
   - Verificación con script: `backend/test-user-permissions.sh`
-  - Documentación: Logs de depuración agregados en controladores
 
-- ✅ **Estadísticas Jerárquicas** - Dashboard dual con:
+- ✅ **Estadísticas Jerárquicas** (7 de noviembre de 2025):
   - Sección "Mis Tareas" (estadísticas personales)
   - Sección "Tareas de mi Ámbito" (estadísticas filtradas jerárquicamente)
   - Badge "Incluye unidades dependientes"

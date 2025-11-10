@@ -26,8 +26,9 @@ Esta aplicación web tiene como objetivo facilitar la gestión administrativa in
 - **Usuarios**: CRUD con filtrado jerárquico, reseteo de contraseñas
 - **Unidades**: Árbol organizacional con CTEs recursivos
 - **Roles y Permisos**: Sistema RBAC completo (26 permisos predefinidos)
+- **Tareas**: ⭐ Gestión con filtrado jerárquico y estadísticas duales
 - **Menú Dinámico**: ⭐ Sidebar que muestra solo aplicaciones autorizadas
-- **Notificaciones**: Sistema de alertas para usuarios
+- **Notificaciones**: ⭐ Sistema de alertas automáticas con triggers y events
 - **Logs de Auditoría**: Historial completo con estadísticas
 
 ---
@@ -225,12 +226,24 @@ curl -X POST http://localhost:5000/api/auth/login \
 - `DELETE /api/usuarios/:usuarioId/roles-alcance/:asignacionId` - Revocar asignación
 - `PUT /api/usuarios/:usuarioId/roles-alcance` - Actualizar todas las asignaciones
 
-### Notificaciones
-- `GET /api/notificaciones` - Listar notificaciones
-- `GET /api/notificaciones/no-leidas` - Contar no leídas
-- `POST /api/notificaciones/:id/leer` - Marcar como leída
-- `POST /api/notificaciones/leer-todas` - Marcar todas como leídas
+### Notificaciones ⭐
+- `GET /api/notificaciones` - Listar notificaciones (con paginación y filtros)
+- `GET /api/notificaciones/:id` - Obtener detalle de notificación
+- `GET /api/notificaciones/contador` - Contar no leídas
+- `PATCH /api/notificaciones/:id/marcar-leida` - Marcar como leída
+- `PATCH /api/notificaciones/marcar-todas-leidas` - Marcar todas como leídas
 - `DELETE /api/notificaciones/:id` - Eliminar notificación
+
+**Sistema de Alertas Automáticas:**
+- ✅ **Triggers en base de datos** - Notifican automáticamente en operaciones CUD
+- ✅ **Events programados** - Verifican tareas próximas a vencer (8 AM) y vencidas (9 AM)
+- ✅ **Tipos de alertas**:
+  - 🆕 Asignación de tarea (inmediata)
+  - 🔄 Reasignación de tarea (a ambos usuarios)
+  - ✅ Completación de tarea (al creador)
+  - ⚠️ Tarea próxima a vencer (0-3 días antes)
+  - 🔴 Tarea vencida (diariamente hasta completar)
+- Ver documentación completa en: `SISTEMA-ALERTAS-COMPLETADO.md`
 
 ### Logs de Auditoría
 - `GET /api/logs` - Listar logs (solo admin)
