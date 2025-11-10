@@ -8,17 +8,19 @@ const notificacionesService = {
     /**
      * Listar notificaciones del usuario autenticado
      * @param {Object} params - Parámetros de búsqueda
-     * @param {number} params.pagina - Número de página (opcional)
-     * @param {number} params.limite - Registros por página (opcional)
+     * @param {boolean} params.leida - Filtrar por leída (opcional)
+     * @param {number} params.page - Número de página (opcional)
+     * @param {number} params.limit - Registros por página (opcional)
      * @returns {Promise<Object>} Lista de notificaciones con paginación
      */
     async listar(params = {}) {
         try {
-            const response = await api.get('/api/notificaciones', { params });
+            const response = await api.get('/notificaciones', { params });
             return {
                 success: true,
                 data: response.data.data,
-                pagination: response.data.pagination
+                pagination: response.data.pagination,
+                stats: response.data.stats
             };
         } catch (error) {
             console.error('Error al listar notificaciones:', error);
@@ -35,10 +37,10 @@ const notificacionesService = {
      */
     async contarNoLeidas() {
         try {
-            const response = await api.get('/api/notificaciones/no-leidas');
+            const response = await api.get('/notificaciones/contador');
             return {
                 success: true,
-                data: response.data.data
+                data: response.data.data.no_leidas
             };
         } catch (error) {
             console.error('Error al contar notificaciones no leídas:', error);
@@ -56,10 +58,11 @@ const notificacionesService = {
      */
     async marcarComoLeida(id) {
         try {
-            const response = await api.post(`/api/notificaciones/${id}/leer`);
+            const response = await api.patch(`/notificaciones/${id}/marcar-leida`);
             return {
                 success: true,
-                message: response.data.message || 'Notificación marcada como leída'
+                message: response.data.message || 'Notificación marcada como leída',
+                data: response.data.data
             };
         } catch (error) {
             console.error('Error al marcar notificación como leída:', error);
@@ -76,7 +79,7 @@ const notificacionesService = {
      */
     async marcarTodasComoLeidas() {
         try {
-            const response = await api.post('/api/notificaciones/leer-todas');
+            const response = await api.patch('/notificaciones/marcar-todas-leidas');
             return {
                 success: true,
                 message: response.data.message || 'Todas las notificaciones marcadas como leídas'
@@ -97,7 +100,7 @@ const notificacionesService = {
      */
     async eliminar(id) {
         try {
-            const response = await api.delete(`/api/notificaciones/${id}`);
+            const response = await api.delete(`/notificaciones/${id}`);
             return {
                 success: true,
                 message: response.data.message || 'Notificación eliminada exitosamente'
@@ -107,6 +110,27 @@ const notificacionesService = {
             return {
                 success: false,
                 message: error.response?.data?.message || 'Error al eliminar notificación'
+            };
+        }
+    },
+
+    /**
+     * Obtener detalle de una notificación
+     * @param {number} id - ID de la notificación
+     * @returns {Promise<Object>} Notificación completa
+     */
+    async obtenerPorId(id) {
+        try {
+            const response = await api.get(`/notificaciones/${id}`);
+            return {
+                success: true,
+                data: response.data.data
+            };
+        } catch (error) {
+            console.error('Error al obtener notificación:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Error al obtener notificación'
             };
         }
     }

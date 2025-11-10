@@ -4,27 +4,22 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiMenu, FiBell, FiUser, FiLogOut, FiKey } from 'react-icons/fi';
+import { FiMenu, FiUser, FiLogOut, FiKey } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import Badge from '../common/Badge';
+import NotificationBell from '../Notifications/NotificationBell';
 
 const Header = ({ onMenuClick }) => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [showUserMenu, setShowUserMenu] = useState(false);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [notificationCount] = useState(3); // TODO: Obtener del backend
     const userMenuRef = useRef(null);
-    const notificationRef = useRef(null);
     
     // Cerrar menús al hacer click fuera
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
                 setShowUserMenu(false);
-            }
-            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-                setShowNotifications(false);
             }
         };
         
@@ -57,91 +52,7 @@ const Header = ({ onMenuClick }) => {
             {/* Acciones del usuario */}
             <div className="flex items-center gap-4">
                 {/* Notificaciones */}
-                <div className="relative" ref={notificationRef}>
-                    <button 
-                        onClick={() => setShowNotifications(!showNotifications)}
-                        className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                        <FiBell size={20} className="text-text" />
-                        {notificationCount > 0 && (
-                            <Badge 
-                                variant="danger" 
-                                size="sm"
-                                className="absolute -top-1 -right-1 min-w-[20px] h-5"
-                            >
-                                {notificationCount > 9 ? '9+' : notificationCount}
-                            </Badge>
-                        )}
-                    </button>
-                    
-                    {/* Panel de notificaciones */}
-                    {showNotifications && (
-                        <>
-                            <div 
-                                className="fixed inset-0 z-10"
-                                onClick={() => setShowNotifications(false)}
-                            />
-                            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-20 animate-slideIn">
-                                <div className="p-4 border-b border-gray-200">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="font-semibold text-text">Notificaciones</h3>
-                                        {notificationCount > 0 && (
-                                            <Badge variant="primary" size="sm">
-                                                {notificationCount}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="max-h-96 overflow-y-auto">
-                                    {notificationCount > 0 ? (
-                                        <div className="divide-y divide-gray-100">
-                                            <div className="p-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                                                <p className="text-sm font-medium text-text">
-                                                    Nuevo usuario registrado
-                                                </p>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    Hace 5 minutos
-                                                </p>
-                                            </div>
-                                            <div className="p-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                                                <p className="text-sm font-medium text-text">
-                                                    Actualización de permisos
-                                                </p>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    Hace 1 hora
-                                                </p>
-                                            </div>
-                                            <div className="p-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                                                <p className="text-sm font-medium text-text">
-                                                    Cambios en la unidad
-                                                </p>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    Hace 2 horas
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="p-8 text-center text-gray-500">
-                                            <FiBell size={32} className="mx-auto mb-2 opacity-30" />
-                                            <p className="text-sm">No hay notificaciones</p>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="p-3 border-t border-gray-200 text-center">
-                                    <button 
-                                        onClick={() => {
-                                            setShowNotifications(false);
-                                            navigate('/notificaciones');
-                                        }}
-                                        className="text-sm text-primary hover:text-primary/80 font-medium"
-                                    >
-                                        Ver todas las notificaciones
-                                    </button>
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
+                <NotificationBell />
                 
                 {/* Menú de usuario */}
                 <div className="relative" ref={userMenuRef}>

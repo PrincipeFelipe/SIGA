@@ -19,6 +19,7 @@ import { UnitsTreePage } from './pages/unidades';
 import { RolesListPage } from './pages/roles';
 import { LogsViewerPage } from './pages/logs';
 import { TasksListPage } from './pages/tareas';
+import NotificationListPage from './pages/NotificationListPage';
 
 function App() {
   return (
@@ -114,6 +115,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <TasksListPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/notificaciones" 
+            element={
+              <ProtectedRoute>
+                <NotificationListPage />
               </ProtectedRoute>
             } 
           />
