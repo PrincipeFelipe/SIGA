@@ -3,8 +3,9 @@
 // Vista completa de notificaciones con paginación y filtros
 // ============================================================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FaBell, FaCheckDouble, FaFilter } from 'react-icons/fa';
+import Layout from '../components/layout/Layout';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Loading from '../components/common/Loading';
@@ -23,15 +24,10 @@ const NotificationListPage = () => {
     });
     const [stats, setStats] = useState({ no_leidas: 0 });
 
-    // Cargar notificaciones al montar y cuando cambien filtros/página
-    useEffect(() => {
-        fetchNotifications();
-    }, [filter, pagination.page]);
-
     /**
      * Obtener listado de notificaciones
      */
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         setLoading(true);
         try {
             const params = {
@@ -55,7 +51,12 @@ const NotificationListPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter, pagination.page, pagination.limit]);
+
+    // Cargar notificaciones al montar y cuando cambien filtros/página
+    useEffect(() => {
+        fetchNotifications();
+    }, [fetchNotifications]);
 
     /**
      * Marcar todas las notificaciones como leídas
@@ -95,31 +96,40 @@ const NotificationListPage = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-                        <FaBell className="mr-3 text-primary" />
-                        Notificaciones
-                    </h1>
-                    <p className="text-gray-600 mt-1">
-                        Gestiona tus notificaciones y alertas del sistema
-                    </p>
-                </div>
+    // Mostrar loading mientras carga
+    if (loading && notifications.length === 0) {
+        return (
+            <Layout>
+                <Loading fullScreen />
+            </Layout>
+        );
+    }
 
-                {/* Botón marcar todas como leídas */}
-                {stats.no_leidas > 0 && (
-                    <Button
-                        onClick={handleMarkAllAsRead}
-                        variant="secondary"
-                        icon={<FaCheckDouble />}
-                    >
-                        Marcar todas como leídas ({stats.no_leidas})
-                    </Button>
-                )}
-            </div>
+    return (
+        <Layout>
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            Notificaciones
+                        </h1>
+                        <p className="text-gray-500 mt-1">
+                            Gestiona tus notificaciones y alertas del sistema
+                        </p>
+                    </div>
+
+                    {/* Botón marcar todas como leídas */}
+                    {stats.no_leidas > 0 && (
+                        <Button
+                            onClick={handleMarkAllAsRead}
+                            variant="secondary"
+                            icon={<FaCheckDouble />}
+                        >
+                            Marcar todas como leídas ({stats.no_leidas})
+                        </Button>
+                    )}
+                </div>
 
             {/* Filtros */}
             <Card>
@@ -188,38 +198,39 @@ const NotificationListPage = () => {
                 </div>
             )}
 
-            {/* Paginación */}
-            {pagination.pages > 1 && (
-                <Card>
-                    <div className="flex justify-between items-center">
-                        <div className="text-sm text-gray-600">
-                            Página {pagination.page} de {pagination.pages}
-                            <span className="ml-2 text-gray-400">
-                                ({pagination.total} notificaciones en total)
-                            </span>
+                {/* Paginación */}
+                {pagination.pages > 1 && (
+                    <Card>
+                        <div className="flex justify-between items-center">
+                            <div className="text-sm text-gray-600">
+                                Página {pagination.page} de {pagination.pages}
+                                <span className="ml-2 text-gray-400">
+                                    ({pagination.total} notificaciones en total)
+                                </span>
+                            </div>
+                            <div className="flex space-x-2">
+                                <Button
+                                    onClick={() => handlePageChange(pagination.page - 1)}
+                                    disabled={pagination.page === 1}
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    ← Anterior
+                                </Button>
+                                <Button
+                                    onClick={() => handlePageChange(pagination.page + 1)}
+                                    disabled={pagination.page === pagination.pages}
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    Siguiente →
+                                </Button>
+                            </div>
                         </div>
-                        <div className="flex space-x-2">
-                            <Button
-                                onClick={() => handlePageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                variant="secondary"
-                                size="sm"
-                            >
-                                ← Anterior
-                            </Button>
-                            <Button
-                                onClick={() => handlePageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.pages}
-                                variant="secondary"
-                                size="sm"
-                            >
-                                Siguiente →
-                            </Button>
-                        </div>
-                    </div>
-                </Card>
-            )}
-        </div>
+                    </Card>
+                )}
+            </div>
+        </Layout>
     );
 };
 
