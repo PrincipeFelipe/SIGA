@@ -2,6 +2,7 @@
 // PÁGINA DE LISTADO DE TAREAS
 // ============================================================================
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { FiPlus, FiRefreshCw, FiSearch, FiCalendar, FiAlertCircle, FiCheckCircle, FiClock, FiEdit2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import Layout from '../../components/layout/Layout';
@@ -12,6 +13,8 @@ import { usePermissions } from '../../hooks/usePermissions';
 
 const TasksListPage = () => {
   const { can } = usePermissions();
+  const { id } = useParams(); // Capturar ID de tarea desde la URL
+  const navigate = useNavigate();
   const [tareas, setTareas] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +40,7 @@ const TasksListPage = () => {
   useEffect(() => {
     cargarUsuarios();
     cargarEstadisticas();
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
@@ -46,6 +50,30 @@ const TasksListPage = () => {
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line
   }, [filtros]);
+
+  // Cargar tarea automáticamente si viene un ID en la URL
+  useEffect(() => {
+    if (id) {
+      cargarTareaDesdeURL(id);
+    }
+    // eslint-disable-next-line
+  }, [id]);
+
+  /**
+   * Cargar detalle de tarea desde URL
+   */
+  const cargarTareaDesdeURL = async (tareaId) => {
+    try {
+      const tareaCompleta = await tareasService.obtenerPorId(tareaId);
+      setSelectedTask(tareaCompleta);
+      setShowDetailModal(true);
+    } catch (error) {
+      console.error('Error al cargar tarea desde URL:', error);
+      toast.error('No se pudo cargar la tarea solicitada');
+      // Redirigir a la lista de tareas sin el ID
+      navigate('/tareas', { replace: true });
+    }
+  };
 
   const cargarTareas = async () => {
     try {
@@ -595,6 +623,10 @@ const TasksListPage = () => {
             onClose={() => {
               setShowDetailModal(false);
               setSelectedTask(null);
+              // Si venimos desde una URL con ID, limpiarla
+              if (id) {
+                navigate('/tareas', { replace: true });
+              }
             }}
             task={selectedTask}
             onUpdate={() => {

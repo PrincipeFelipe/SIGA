@@ -120,6 +120,15 @@ function App() {
           />
           
           <Route 
+            path="/tareas/:id" 
+            element={
+              <ProtectedRoute>
+                <TasksListPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
             path="/notificaciones" 
             element={
               <ProtectedRoute>
