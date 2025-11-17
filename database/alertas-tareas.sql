@@ -157,6 +157,9 @@ DELIMITER ;
 -- EVENTO: Verificar tareas próximas a vencer
 -- ============================================================================
 -- Se ejecuta diariamente para enviar alertas de tareas próximas a vencer
+-- MODIFICADO: Alerta cuando quedan MENOS de 3 días (1 o 2 días)
+-- Las tareas que vencen HOY se consideran críticas (error)
+-- Las alertas persisten hasta que la tarea se complete
 -- ============================================================================
 
 -- Activar el event scheduler si no está activado
@@ -179,7 +182,8 @@ BEGIN
     DECLARE v_dias_restantes INT;
     DECLARE v_prioridad VARCHAR(20);
     
-    -- Cursor para tareas que vencen en 3 días o menos
+    -- Cursor para tareas que vencen en MENOS de 3 días (0, 1 o 2 días)
+    -- Solo tareas NO completadas ni canceladas
     DECLARE cur CURSOR FOR
         SELECT 
             id,
@@ -189,8 +193,8 @@ BEGIN
             prioridad
         FROM Tareas
         WHERE estado NOT IN ('completada', 'cancelada')
-          AND DATEDIFF(fecha_limite, CURDATE()) BETWEEN 0 AND 3
-          AND DATEDIFF(fecha_limite, CURDATE()) >= 0;
+          AND DATEDIFF(fecha_limite, CURDATE()) >= 0
+          AND DATEDIFF(fecha_limite, CURDATE()) < 3;  -- Menos de 3 días: 0, 1 o 2
     
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
     
@@ -203,23 +207,40 @@ BEGIN
             LEAVE read_loop;
         END IF;
         
-        -- Crear notificación de alerta
-        CALL crear_notificacion_tarea(
-            v_usuario_id,
-            CONCAT('⚠️ Tarea próxima a vencer: ', v_titulo),
-            CONCAT(
-                'La tarea "', v_titulo, '" vence en ',
-                v_dias_restantes, 
-                IF(v_dias_restantes = 1, ' día', ' días'),
-                '. Por favor, complétala antes de la fecha límite.'
-            ),
-            CASE 
-                WHEN v_dias_restantes = 0 THEN 'error'
-                WHEN v_dias_restantes <= 1 THEN 'error'
-                ELSE 'warning'
-            END,
-            CONCAT('/tareas/', v_tarea_id)
-        );
+        -- Verificar si ya existe notificación de hoy para evitar duplicados
+        IF NOT EXISTS (
+            SELECT 1 FROM Notificaciones 
+            WHERE usuario_id = v_usuario_id 
+              AND titulo LIKE CONCAT('%', v_titulo, '%')
+              AND tipo IN ('warning', 'error')
+              AND DATE(created_at) = CURDATE()
+        ) THEN
+            -- Crear notificación de alerta
+            CALL crear_notificacion_tarea(
+                v_usuario_id,
+                CASE 
+                    WHEN v_dias_restantes = 0 THEN CONCAT('🔴 URGENTE - Vence HOY: ', v_titulo)
+                    WHEN v_dias_restantes = 1 THEN CONCAT('🟠 Vence MAÑANA: ', v_titulo)
+                    ELSE CONCAT('⚠️ Vence en ', v_dias_restantes, ' días: ', v_titulo)
+                END,
+                CONCAT(
+                    'La tarea "', v_titulo, '" ',
+                    CASE 
+                        WHEN v_dias_restantes = 0 THEN 'vence HOY'
+                        WHEN v_dias_restantes = 1 THEN 'vence MAÑANA'
+                        ELSE CONCAT('vence en ', v_dias_restantes, ' días')
+                    END,
+                    '. Prioridad: ', v_prioridad,
+                    '. Por favor, complétala antes de la fecha límite.'
+                ),
+                CASE 
+                    WHEN v_dias_restantes = 0 THEN 'error'  -- Vence HOY = crítico
+                    WHEN v_dias_restantes = 1 THEN 'error'  -- Vence MAÑANA = crítico
+                    ELSE 'warning'  -- Vence en 2 días = advertencia
+                END,
+                CONCAT('/tareas/', v_tarea_id)
+            );
+        END IF;
     END LOOP;
     
     CLOSE cur;
@@ -231,6 +252,7 @@ DELIMITER ;
 -- EVENTO: Verificar tareas vencidas
 -- ============================================================================
 -- Se ejecuta diariamente para enviar alertas de tareas vencidas
+-- MODIFICADO: Las alertas persisten diariamente hasta que la tarea se complete
 -- ============================================================================
 
 DROP EVENT IF EXISTS check_tareas_vencidas;
@@ -249,6 +271,7 @@ BEGIN
     DECLARE v_dias_vencidos INT;
     
     -- Cursor para tareas vencidas (que vencieron ayer o antes)
+    -- Solo incluye tareas NO completadas ni canceladas
     DECLARE cur CURSOR FOR
         SELECT 
             id,
@@ -270,22 +293,23 @@ BEGIN
             LEAVE read_loop;
         END IF;
         
-        -- Crear notificación de alerta (solo una vez por día)
-        -- Verificar si ya existe notificación de hoy
+        -- Crear notificación de alerta diaria
+        -- Verificar si ya existe notificación de HOY para evitar duplicados
         IF NOT EXISTS (
             SELECT 1 FROM Notificaciones 
             WHERE usuario_id = v_usuario_id 
-              AND titulo LIKE CONCAT('%', v_titulo, '%')
+              AND titulo LIKE CONCAT('🔴 Tarea VENCIDA: ', v_titulo, '%')
+              AND tipo = 'error'
               AND DATE(created_at) = CURDATE()
         ) THEN
             CALL crear_notificacion_tarea(
                 v_usuario_id,
                 CONCAT('🔴 Tarea VENCIDA: ', v_titulo),
                 CONCAT(
-                    'La tarea "', v_titulo, '" está vencida desde hace ',
+                    'URGENTE: La tarea "', v_titulo, '" está vencida desde hace ',
                     v_dias_vencidos,
                     IF(v_dias_vencidos = 1, ' día', ' días'),
-                    '. Actualiza su estado o complétala urgentemente.'
+                    '. Esta alerta se repetirá diariamente hasta que completes o canceles la tarea.'
                 ),
                 'error',
                 CONCAT('/tareas/', v_tarea_id)

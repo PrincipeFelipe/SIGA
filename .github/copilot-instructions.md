@@ -444,15 +444,19 @@ R84101K / klandemo          → Usuario básico (6 permisos)
    - Triggers de base de datos
    - Filtrado por alcance organizacional
 
-**Últimas Implementaciones (10 de noviembre de 2025):**
+**Últimas Implementaciones:**
 
-- ✅ **Sistema de Alertas Automáticas** - ⭐ Completado al 100% en backend:
+- ✅ **Sistema de Alertas Automáticas** - ⭐ Actualizado v2.0 (13 de noviembre de 2025):
   - **Triggers en Base de Datos:**
     - `after_tarea_insert`: Notifica al usuario cuando se le asigna una tarea
     - `after_tarea_update`: Notifica en reasignación (a ambos usuarios) y completación (al creador)
   - **Events Programados (MariaDB):**
-    - `check_tareas_proximas_vencer`: Ejecuta diariamente a las 8:00 AM, alerta tareas que vencen en 0-3 días
-    - `check_tareas_vencidas`: Ejecuta diariamente a las 9:00 AM, alerta tareas vencidas no completadas
+    - `check_tareas_proximas_vencer`: Ejecuta diariamente a las 8:00 AM
+      - ⭐ ACTUALIZADO: Alerta cuando quedan MENOS de 3 días (0, 1 o 2 días)
+      - Antes: 0-3 días | Ahora: < 3 días (3 días NO alerta)
+    - `check_tareas_vencidas`: Ejecuta diariamente a las 9:00 AM
+      - ⭐ ACTUALIZADO: Alertas persistentes diarias hasta completar la tarea
+      - Máximo 1 notificación por día (sin spam)
   - **Tipos de Notificaciones:**
     - `info`: Información general, reasignaciones
     - `warning`: Tareas próximas a vencer (2-3 días), prioridad media/alta
