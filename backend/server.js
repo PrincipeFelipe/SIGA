@@ -147,6 +147,18 @@ app.use('/api/logs', logsRoutes);
 const aplicacionesRoutes = require('./routes/aplicaciones.routes');
 app.use('/api/aplicaciones', aplicacionesRoutes);
 
+// Módulo de Taller - Gestión de vehículos
+const vehiculosRoutes = require('./routes/vehiculos.routes');
+app.use('/api/vehiculos', vehiculosRoutes);
+
+// Módulo de Taller - Tipos de cita
+const tiposCitaRoutes = require('./routes/tipos-cita.routes');
+app.use('/api/tipos-cita', tiposCitaRoutes);
+
+// Módulo de Taller - Citas
+const citasRoutes = require('./routes/citas.routes');
+app.use('/api/citas', citasRoutes);
+
 // ============================================================================
 // MANEJO DE ERRORES 404
 // ============================================================================

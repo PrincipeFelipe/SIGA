@@ -21,6 +21,11 @@ import { LogsViewerPage } from './pages/logs';
 import { TasksListPage } from './pages/tareas';
 import NotificationListPage from './pages/NotificationListPage';
 
+// Módulo de Taller
+import VehiclesListPage from './pages/taller/VehiclesListPage.jsx';
+import AppointmentTypesListPage from './pages/taller/AppointmentTypesListPage.jsx';
+import AppointmentsListPage from './pages/taller/AppointmentsListPage.jsx';
+
 function App() {
   return (
     <AuthProvider>
@@ -133,6 +138,39 @@ function App() {
             element={
               <ProtectedRoute>
                 <NotificationListPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Módulo de Taller */}
+          <Route 
+            path="/taller" 
+            element={<Navigate to="/taller/vehiculos" replace />} 
+          />
+          
+          <Route 
+            path="/taller/vehiculos" 
+            element={
+              <ProtectedRoute>
+                <VehiclesListPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/taller/tipos-cita" 
+            element={
+              <ProtectedRoute>
+                <AppointmentTypesListPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/taller/citas" 
+            element={
+              <ProtectedRoute>
+                <AppointmentsListPage />
               </ProtectedRoute>
             } 
           />

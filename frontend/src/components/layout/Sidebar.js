@@ -2,7 +2,7 @@
 // COMPONENTE SIDEBAR - Barra lateral de navegación
 // ============================================================================
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
     FiHome, 
@@ -13,7 +13,9 @@ import {
     FiLayers,
     FiBarChart2,
     FiGrid,
-    FiCheckSquare
+    FiCheckSquare,
+    FiChevronDown,
+    FiChevronRight
 } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -48,6 +50,7 @@ const LogoImage = () => {
 const Sidebar = ({ isOpen, onClose }) => {
     const location = useLocation();
     const { menu } = useAuth();
+    const [expandedItems, setExpandedItems] = useState(new Set());
     
     // Debug: verificar qué menú está recibiendo el componente
     useEffect(() => {
@@ -59,6 +62,22 @@ const Sidebar = ({ isOpen, onClose }) => {
         });
     }, [menu]);
     
+    // Auto-expandir items con rutas activas
+    useEffect(() => {
+        const newExpanded = new Set(expandedItems);
+        menuItems.forEach(item => {
+            if (item.children && item.children.length > 0) {
+                const hasActiveChild = item.children.some(child => isActive(child.ruta));
+                if (hasActiveChild) {
+                    newExpanded.add(item.id);
+                }
+            }
+        });
+        if (newExpanded.size !== expandedItems.size) {
+            setExpandedItems(newExpanded);
+        }
+    }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+    
     // Mapeo de iconos (nombres en BD -> componentes React)
     const iconMap = {
         'icon-home': FiHome,
@@ -69,7 +88,10 @@ const Sidebar = ({ isOpen, onClose }) => {
         'icon-chart-bar': FiBarChart2,
         'icon-history': FiFileText,
         'icon-grid': FiGrid,
-        'icon-check-square': FiCheckSquare
+        'icon-check-square': FiCheckSquare,
+        'truck': FiGrid,
+        'calendar': FiGrid,
+        'settings': FiSettings
     };
     
     // Usar el menú del contexto directamente
@@ -85,6 +107,16 @@ const Sidebar = ({ isOpen, onClose }) => {
             return location.pathname === '/';
         }
         return location.pathname.startsWith(path);
+    };
+    
+    const toggleExpand = (itemId) => {
+        const newExpanded = new Set(expandedItems);
+        if (newExpanded.has(itemId)) {
+            newExpanded.delete(itemId);
+        } else {
+            newExpanded.add(itemId);
+        }
+        setExpandedItems(newExpanded);
     };
     
     return (
@@ -126,27 +158,84 @@ const Sidebar = ({ isOpen, onClose }) => {
                     
                     <ul className="space-y-2">
                         {menuItems.map((item) => {
-                            // Obtener componente de icono desde el mapa
                             const IconComponent = iconMap[item.icono] || FiGrid;
+                            const hasChildren = item.children && item.children.length > 0;
+                            const isExpanded = expandedItems.has(item.id);
                             const active = isActive(item.ruta);
                             
                             return (
                                 <li key={item.id || item.ruta}>
-                                    <Link
-                                        to={item.ruta}
-                                        onClick={onClose}
-                                        className={`
-                                            flex items-center gap-3 px-4 py-3 rounded-lg
-                                            transition-all duration-200
-                                            ${active 
-                                                ? 'bg-white bg-opacity-20 font-semibold' 
-                                                : 'hover:bg-white hover:bg-opacity-10'
-                                            }
-                                        `}
-                                    >
-                                        <IconComponent size={20} />
-                                        <span>{item.nombre}</span>
-                                    </Link>
+                                    {hasChildren ? (
+                                        // Item con submenú (desplegable)
+                                        <>
+                                            <button
+                                                onClick={() => toggleExpand(item.id)}
+                                                className={`
+                                                    w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg
+                                                    transition-all duration-200
+                                                    hover:bg-white hover:bg-opacity-10
+                                                    ${active ? 'bg-white bg-opacity-20 font-semibold' : ''}
+                                                `}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <IconComponent size={20} />
+                                                    <span>{item.nombre}</span>
+                                                </div>
+                                                {isExpanded ? (
+                                                    <FiChevronDown size={16} />
+                                                ) : (
+                                                    <FiChevronRight size={16} />
+                                                )}
+                                            </button>
+                                            
+                                            {/* Submenú */}
+                                            {isExpanded && (
+                                                <ul className="mt-2 ml-4 space-y-1">
+                                                    {item.children.map((child) => {
+                                                        const ChildIcon = iconMap[child.icono] || FiGrid;
+                                                        const childActive = isActive(child.ruta);
+                                                        
+                                                        return (
+                                                            <li key={child.id || child.ruta}>
+                                                                <Link
+                                                                    to={child.ruta}
+                                                                    onClick={onClose}
+                                                                    className={`
+                                                                        flex items-center gap-3 px-4 py-2 rounded-lg text-sm
+                                                                        transition-all duration-200
+                                                                        ${childActive 
+                                                                            ? 'bg-white bg-opacity-20 font-semibold' 
+                                                                            : 'hover:bg-white hover:bg-opacity-10'
+                                                                        }
+                                                                    `}
+                                                                >
+                                                                    <ChildIcon size={16} />
+                                                                    <span>{child.nombre}</span>
+                                                                </Link>
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ul>
+                                            )}
+                                        </>
+                                    ) : (
+                                        // Item sin submenú (enlace directo)
+                                        <Link
+                                            to={item.ruta}
+                                            onClick={onClose}
+                                            className={`
+                                                flex items-center gap-3 px-4 py-3 rounded-lg
+                                                transition-all duration-200
+                                                ${active 
+                                                    ? 'bg-white bg-opacity-20 font-semibold' 
+                                                    : 'hover:bg-white hover:bg-opacity-10'
+                                                }
+                                            `}
+                                        >
+                                            <IconComponent size={20} />
+                                            <span>{item.nombre}</span>
+                                        </Link>
+                                    )}
                                 </li>
                             );
                         })}
