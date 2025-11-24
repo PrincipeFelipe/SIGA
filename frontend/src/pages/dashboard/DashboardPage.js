@@ -3,20 +3,27 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import { FiUsers, FiLayers, FiCheckSquare, FiAlertCircle } from 'react-icons/fi';
+import { FiUsers, FiLayers, FiCheckSquare, FiAlertCircle, FiTool } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import { Card, Badge, Loading } from '../../components/common';
 import { useAuth } from '../../contexts/AuthContext';
 import dashboardService from '../../services/dashboardService';
+import mantenimientosService from '../../services/mantenimientosService';
+import { usePermissions } from '../../hooks/usePermissions';
 
 const DashboardPage = () => {
     const { user } = useAuth();
+    const { hasPermission } = usePermissions();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [estadisticas, setEstadisticas] = useState(null);
+    const [mantenimientos, setMantenimientos] = useState(null);
     
     // Cargar estadísticas al montar el componente
     useEffect(() => {
         cargarEstadisticas();
+        cargarMantenimientos();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     
@@ -29,6 +36,31 @@ const DashboardPage = () => {
             console.error('Error al cargar estadísticas:', error);
         } finally {
             setLoading(false);
+        }
+    };
+    
+    const cargarMantenimientos = async () => {
+        try {
+            if (hasPermission('maintenance:view')) {
+                const response = await mantenimientosService.obtenerMantenimientosPendientes({
+                    estado: 'vencido'
+                });
+                const vencidos = response.data || [];
+                
+                // Obtener próximos
+                const responsePro = await mantenimientosService.obtenerMantenimientosPendientes({
+                    estado: 'proximo'
+                });
+                const proximos = responsePro.data || [];
+                
+                setMantenimientos({
+                    vencidos: vencidos.length,
+                    proximos: proximos.length,
+                    total: vencidos.length + proximos.length
+                });
+            }
+        } catch (error) {
+            console.error('Error al cargar mantenimientos:', error);
         }
     };
     
@@ -342,6 +374,81 @@ const DashboardPage = () => {
                         </div>
                     </Card>
                 </div>
+                
+                {/* Widget de Mantenimientos - Siempre visible si tiene permisos */}
+                {mantenimientos && (
+                    <div>
+                        <h2 className="text-xl font-heading font-bold text-text mb-4">
+                            🔧 Mantenimientos de Vehículos
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Card
+                                padding={false}
+                                className="cursor-pointer hover:shadow-lg transition-shadow"
+                                onClick={() => navigate('/taller/pendientes?estado=vencido')}
+                            >
+                                <div className="p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="p-3 rounded-lg bg-red-100">
+                                            <FiAlertCircle className="text-red-600" size={24} />
+                                        </div>
+                                        {mantenimientos.vencidos > 0 && (
+                                            <Badge variant="danger">
+                                                ¡Urgente!
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <h3 className="text-3xl font-bold text-red-600 mb-1">
+                                        {mantenimientos.vencidos}
+                                    </h3>
+                                    <p className="text-sm text-gray-600">
+                                        Mantenimientos Vencidos
+                                    </p>
+                                </div>
+                            </Card>
+                            
+                            <Card
+                                padding={false}
+                                className="cursor-pointer hover:shadow-lg transition-shadow"
+                                onClick={() => navigate('/taller/pendientes?estado=proximo')}
+                            >
+                                <div className="p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="p-3 rounded-lg bg-yellow-100">
+                                            <FiTool className="text-yellow-600" size={24} />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-3xl font-bold text-yellow-600 mb-1">
+                                        {mantenimientos.proximos}
+                                    </h3>
+                                    <p className="text-sm text-gray-600">
+                                        Próximos a Vencer
+                                    </p>
+                                </div>
+                            </Card>
+                            
+                            <Card
+                                padding={false}
+                                className="cursor-pointer hover:shadow-lg transition-shadow"
+                                onClick={() => navigate('/taller/pendientes')}
+                            >
+                                <div className="p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="p-3 rounded-lg bg-blue-100">
+                                            <FiCheckSquare className="text-blue-600" size={24} />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-3xl font-bold text-blue-600 mb-1">
+                                        {mantenimientos.total}
+                                    </h3>
+                                    <p className="text-sm text-gray-600">
+                                        Total Alertas Activas
+                                    </p>
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+                )}
             </div>
         </Layout>
     );

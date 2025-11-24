@@ -159,6 +159,14 @@ app.use('/api/tipos-cita', tiposCitaRoutes);
 const citasRoutes = require('./routes/citas.routes');
 app.use('/api/citas', citasRoutes);
 
+// Módulo de Taller - Mantenimientos
+const mantenimientosRoutes = require('./routes/mantenimientos.routes');
+app.use('/api/mantenimientos', mantenimientosRoutes);
+
+// Módulo de Taller - Tipos de mantenimiento
+const tiposMantenimientoRoutes = require('./routes/tipos-mantenimiento.routes');
+app.use('/api/tipos-mantenimiento', tiposMantenimientoRoutes);
+
 // ============================================================================
 // MANEJO DE ERRORES 404
 // ============================================================================

@@ -25,6 +25,9 @@ import NotificationListPage from './pages/NotificationListPage';
 import VehiclesListPage from './pages/taller/VehiclesListPage.jsx';
 import AppointmentTypesListPage from './pages/taller/AppointmentTypesListPage.jsx';
 import AppointmentsListPage from './pages/taller/AppointmentsListPage.jsx';
+import MaintenanceListPage from './pages/Taller/MaintenanceListPage.jsx';
+import MaintenanceTypesPage from './pages/Taller/MaintenanceTypesPage.jsx';
+import PendingMaintenancePage from './pages/Taller/PendingMaintenancePage.jsx';
 
 function App() {
   return (
@@ -171,6 +174,33 @@ function App() {
             element={
               <ProtectedRoute>
                 <AppointmentsListPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/taller/mantenimientos" 
+            element={
+              <ProtectedRoute>
+                <MaintenanceListPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/taller/tipos-mantenimiento" 
+            element={
+              <ProtectedRoute>
+                <MaintenanceTypesPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/taller/pendientes" 
+            element={
+              <ProtectedRoute>
+                <PendingMaintenancePage />
               </ProtectedRoute>
             } 
           />
