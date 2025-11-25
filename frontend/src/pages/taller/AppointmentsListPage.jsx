@@ -8,7 +8,7 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Loading from '../../components/common/Loading';
 import AppointmentFormModal from './AppointmentFormModal';
-import { FiPlus, FiCheckCircle, FiXCircle, FiClock, FiFilter, FiCalendar } from 'react-icons/fi';
+import { FiPlus, FiCheckCircle, FiXCircle, FiClock, FiFilter, FiCalendar, FiEdit2, FiEye } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import { toast } from 'react-hot-toast';
 
@@ -31,6 +31,7 @@ const AppointmentsListPage = () => {
 
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('appointments:create');
+    const canEdit = hasPermission('appointments:edit');
     const canManage = hasPermission('appointments:manage');
     const canCancel = hasPermission('appointments:cancel');
     const canView = hasPermission('appointments:view');
@@ -72,6 +73,70 @@ const AppointmentsListPage = () => {
 
     const handleCreate = () => {
         setModalOpen(true);
+    };
+
+    const handleEdit = (appointment) => {
+        if (!canEdit) return;
+        // TODO: Implementar edición de cita (abrir modal con datos precargados)
+        toast.info('Funcionalidad de edición en desarrollo');
+    };
+
+    const handleView = (appointment) => {
+        Swal.fire({
+            title: 'Detalle de Cita',
+            html: `
+                <div class="text-left space-y-3">
+                    <div class="border-b pb-2">
+                        <p class="text-xs text-gray-500 uppercase">Vehículo</p>
+                        <p class="font-semibold text-primary">${appointment.matricula}</p>
+                        <p class="text-sm text-gray-600">${appointment.marca} ${appointment.modelo}</p>
+                    </div>
+                    <div class="border-b pb-2">
+                        <p class="text-xs text-gray-500 uppercase">Servicio</p>
+                        <p class="font-semibold">${appointment.tipo_cita_nombre}</p>
+                        <p class="text-sm text-gray-600">${appointment.duracion_minutos} minutos</p>
+                    </div>
+                    <div class="border-b pb-2">
+                        <p class="text-xs text-gray-500 uppercase">Fecha y Hora</p>
+                        <p class="font-semibold">${new Date(appointment.fecha_hora_inicio).toLocaleString('es-ES')}</p>
+                        <p class="text-sm text-gray-600">Estado: ${appointment.estado}</p>
+                    </div>
+                    <div class="border-b pb-2">
+                        <p class="text-xs text-gray-500 uppercase">Solicitante</p>
+                        <p class="font-semibold">${appointment.solicitante_nombre}</p>
+                        <p class="text-sm text-gray-600">${appointment.unidad_nombre}</p>
+                    </div>
+                    ${appointment.notas ? `
+                        <div class="border-b pb-2">
+                            <p class="text-xs text-gray-500 uppercase">Notas</p>
+                            <p class="text-sm text-gray-700">${appointment.notas}</p>
+                        </div>
+                    ` : ''}
+                    ${appointment.diagnostico ? `
+                        <div class="border-b pb-2">
+                            <p class="text-xs text-gray-500 uppercase">Diagnóstico</p>
+                            <p class="text-sm text-gray-700">${appointment.diagnostico}</p>
+                        </div>
+                    ` : ''}
+                    ${appointment.trabajos_realizados ? `
+                        <div class="border-b pb-2">
+                            <p class="text-xs text-gray-500 uppercase">Trabajos Realizados</p>
+                            <p class="text-sm text-gray-700">${appointment.trabajos_realizados}</p>
+                        </div>
+                    ` : ''}
+                    ${appointment.motivo_cancelacion ? `
+                        <div class="border-b pb-2">
+                            <p class="text-xs text-gray-500 uppercase">Motivo de Cancelación</p>
+                            <p class="text-sm text-red-700">${appointment.motivo_cancelacion}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `,
+            icon: 'info',
+            confirmButtonColor: '#004E2E',
+            confirmButtonText: 'Cerrar',
+            width: '600px'
+        });
     };
 
     const handleConfirm = async (appointment) => {
@@ -417,6 +482,31 @@ const AppointmentsListPage = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                                 <div className="flex justify-end gap-2">
+                                                    {/* Botón Ver Detalles */}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleView(appointment)}
+                                                        title="Ver detalles"
+                                                    >
+                                                        <FiEye />
+                                                    </Button>
+
+                                                    {/* Botón Editar (solo si no está completada o cancelada) */}
+                                                    {appointment.estado !== 'completada' && 
+                                                     appointment.estado !== 'cancelada' && 
+                                                     canEdit && (
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            onClick={() => handleEdit(appointment)}
+                                                            title="Editar"
+                                                        >
+                                                            <FiEdit2 />
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Botón Confirmar (solo estado pendiente) */}
                                                     {appointment.estado === 'pendiente' && canManage && (
                                                         <Button
                                                             variant="success"
@@ -427,6 +517,8 @@ const AppointmentsListPage = () => {
                                                             <FiCheckCircle />
                                                         </Button>
                                                     )}
+
+                                                    {/* Botón Completar (solo estado confirmada) */}
                                                     {appointment.estado === 'confirmada' && canManage && (
                                                         <Button
                                                             variant="primary"
@@ -437,6 +529,8 @@ const AppointmentsListPage = () => {
                                                             <FiClock />
                                                         </Button>
                                                     )}
+
+                                                    {/* Botón Cancelar (solo si no está cancelada o completada) */}
                                                     {appointment.estado !== 'cancelada' && 
                                                      appointment.estado !== 'completada' && 
                                                      canCancel && (
