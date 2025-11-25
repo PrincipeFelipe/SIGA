@@ -870,3 +870,49 @@ exports.getMisCitas = async (req, res) => {
         });
     }
 };
+
+/**
+ * Eliminar una cita
+ */
+exports.delete = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        // Verificar que la cita existe
+        const cita = await query(
+            'SELECT * FROM Citas WHERE id = ?',
+            [id]
+        );
+
+        if (cita.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cita no encontrada'
+            });
+        }
+
+        // Eliminar la cita
+        await query('DELETE FROM Citas WHERE id = ?', [id]);
+
+        // Log de auditoría
+        await query(
+            `INSERT INTO Logs (usuario_id, accion, tabla_afectada, registro_id, detalles)
+            VALUES (?, 'DELETE', 'Citas', ?, ?)`,
+            [userId, id, `Cita eliminada: ${cita[0].id}`]
+        );
+
+        res.json({
+            success: true,
+            message: 'Cita eliminada exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error al eliminar cita:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al eliminar cita',
+            error: error.message
+        });
+    }
+};

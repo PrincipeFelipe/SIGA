@@ -88,4 +88,12 @@ router.patch(
     citasController.cancelar
 );
 
+// Eliminar una cita
+router.delete(
+    '/:id',
+    authenticate,
+    requirePermission('appointments:delete'),
+    citasController.delete
+);
+
 module.exports = router;

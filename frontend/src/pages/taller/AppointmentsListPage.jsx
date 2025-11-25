@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { obtenerCitas, confirmarCita, cancelarCita, completarCita } from '../../services/citasService';
+import { obtenerCitas, confirmarCita, cancelarCita, completarCita, eliminarCita } from '../../services/citasService';
 import { obtenerTiposCitaActivos } from '../../services/tiposCitaService';
 import { usePermissions } from '../../hooks/usePermissions';
 import Layout from '../../components/layout/Layout';
@@ -8,7 +8,7 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Loading from '../../components/common/Loading';
 import AppointmentFormModal from './AppointmentFormModal';
-import { FiPlus, FiCheckCircle, FiXCircle, FiClock, FiFilter, FiCalendar, FiEdit2, FiEye } from 'react-icons/fi';
+import { FiPlus, FiCheckCircle, FiXCircle, FiClock, FiFilter, FiCalendar, FiEdit2, FiEye, FiTrash2 } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import { toast } from 'react-hot-toast';
 
@@ -34,6 +34,7 @@ const AppointmentsListPage = () => {
     const canEdit = hasPermission('appointments:edit');
     const canManage = hasPermission('appointments:manage');
     const canCancel = hasPermission('appointments:cancel');
+    const canDelete = hasPermission('appointments:delete');
     const canView = hasPermission('appointments:view');
 
     // Debug: Verificar permisos cargados
@@ -43,9 +44,10 @@ const AppointmentsListPage = () => {
             canCreate,
             canEdit,
             canManage,
-            canCancel
+            canCancel,
+            canDelete
         });
-    }, [canView, canCreate, canEdit, canManage, canCancel]);
+    }, [canView, canCreate, canEdit, canManage, canCancel, canDelete]);
 
     const loadAppointments = useCallback(async () => {
         try {
@@ -258,6 +260,42 @@ const AppointmentsListPage = () => {
         }
     };
 
+    const handleDelete = async (appointment) => {
+        if (!canDelete) return;
+        
+        const result = await Swal.fire({
+            title: '¿Eliminar cita?',
+            html: `
+                <div class="text-left space-y-2">
+                    <p class="text-sm text-gray-600">¿Estás seguro de que deseas eliminar esta cita?</p>
+                    <div class="bg-gray-50 p-3 rounded mt-3">
+                        <p class="text-sm"><strong>Vehículo:</strong> ${appointment.matricula}</p>
+                        <p class="text-sm"><strong>Fecha:</strong> ${new Date(appointment.fecha_hora_inicio).toLocaleString('es-ES')}</p>
+                        <p class="text-sm"><strong>Servicio:</strong> ${appointment.tipo_cita_nombre}</p>
+                        <p class="text-sm"><strong>Estado:</strong> ${appointment.estado}</p>
+                    </div>
+                    <p class="text-xs text-red-600 mt-3">⚠️ Esta acción no se puede deshacer</p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#C8102E',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+        
+        if (result.isConfirmed) {
+            try {
+                await eliminarCita(appointment.id);
+                toast.success('Cita eliminada correctamente');
+                loadAppointments();
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Error al eliminar cita');
+            }
+        }
+    };
+
     const handleModalClose = (shouldReload) => {
         setModalOpen(false);
         if (shouldReload) {
@@ -319,7 +357,7 @@ const AppointmentsListPage = () => {
                 {/* DEBUG: Banner de permisos (TEMPORAL) */}
                 <div className="bg-blue-50 border border-blue-300 rounded-lg p-4">
                     <p className="text-sm font-semibold text-blue-800 mb-2">🔍 DEBUG: Estado de Permisos</p>
-                    <div className="grid grid-cols-5 gap-2 text-xs">
+                    <div className="grid grid-cols-6 gap-2 text-xs">
                         <div className={canView ? 'text-green-700' : 'text-red-700'}>
                             Ver: {canView ? '✅' : '❌'}
                         </div>
@@ -334,6 +372,9 @@ const AppointmentsListPage = () => {
                         </div>
                         <div className={canCancel ? 'text-green-700' : 'text-red-700'}>
                             Cancelar: {canCancel ? '✅' : '❌'}
+                        </div>
+                        <div className={canDelete ? 'text-green-700' : 'text-red-700'}>
+                            Eliminar: {canDelete ? '✅' : '❌'}
                         </div>
                     </div>
                     <p className="text-xs text-blue-600 mt-2">
@@ -518,7 +559,7 @@ const AppointmentsListPage = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                                 <div className="flex justify-end gap-2">
-                                                    {/* Botón Ver Detalles */}
+                                                    {/* Botón Ver Detalles - Siempre visible */}
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
@@ -528,10 +569,8 @@ const AppointmentsListPage = () => {
                                                         <FiEye />
                                                     </Button>
 
-                                                    {/* Botón Editar (solo si no está completada o cancelada) */}
-                                                    {appointment.estado !== 'completada' && 
-                                                     appointment.estado !== 'cancelada' && 
-                                                     canEdit && (
+                                                    {/* Botón Editar - Ahora visible para TODAS las citas */}
+                                                    {canEdit && (
                                                         <Button
                                                             variant="secondary"
                                                             size="sm"
@@ -574,9 +613,22 @@ const AppointmentsListPage = () => {
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() => handleCancel(appointment)}
-                                                            title="Cancelar"
+                                                            title="Cancelar cita"
                                                         >
                                                             <FiXCircle />
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Botón Eliminar - Siempre visible si tiene permiso */}
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(appointment)}
+                                                            title="Eliminar cita"
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        >
+                                                            <FiTrash2 />
                                                         </Button>
                                                     )}
                                                 </div>

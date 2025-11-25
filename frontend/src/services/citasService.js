@@ -96,3 +96,11 @@ export const cancelarCita = async (id, motivoCancelacion = '') => {
     const response = await api.patch(`/api/citas/${id}/cancelar`, { motivo_cancelacion: motivoCancelacion });
     return response.data;
 };
+
+/**
+ * Eliminar una cita
+ */
+export const eliminarCita = async (id) => {
+    const response = await api.delete(`/api/citas/${id}`);
+    return response.data;
+};
