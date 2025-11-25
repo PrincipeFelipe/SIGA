@@ -258,11 +258,65 @@ async function crear(req, res) {
             });
         }
         
-        // Validar que el código no exista (si se proporciona)
-        if (codigo_unidad) {
+        // Validar jerarquía estricta según tipo de padre
+        if (parent_id) {
+            const [padre] = await query(
+                'SELECT tipo_unidad FROM Unidades WHERE id = ?',
+                [parent_id]
+            );
+            
+            if (!padre) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La unidad padre no existe'
+                });
+            }
+            
+            // Definir jerarquía permitida
+            const jerarquiaPermitida = {
+                'Zona': ['Comandancia'],
+                'Comandancia': ['Compañia'],
+                'Compañia': ['Puesto']
+            };
+            
+            const tiposPermitidos = jerarquiaPermitida[padre.tipo_unidad];
+            
+            if (!tiposPermitidos) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Una unidad tipo ${padre.tipo_unidad} no puede tener unidades subordinadas`
+                });
+            }
+            
+            if (!tiposPermitidos.includes(tipo_unidad)) {
+                const tipoEsperado = tiposPermitidos[0]; // Primer tipo permitido
+                return res.status(400).json({
+                    success: false,
+                    message: `Una unidad subordinada a ${padre.tipo_unidad} solo puede ser de tipo ${tipoEsperado}`
+                });
+            }
+        }
+        
+        // Para Zona: validar que el código se proporcione
+        if (tipo_unidad === 'Zona' && !codigo_unidad) {
+            return res.status(400).json({
+                success: false,
+                message: 'El código de Zona es requerido (ej: ZON01)'
+            });
+        }
+        
+        // Para unidades subordinadas: generar código automáticamente
+        let codigoFinal = codigo_unidad;
+        
+        if (tipo_unidad !== 'Zona') {
+            codigoFinal = await generarCodigoUnidad(tipo_unidad, parent_id);
+        }
+        
+        // Validar que el código no exista
+        if (codigoFinal) {
             const [existe] = await query(
                 'SELECT id FROM Unidades WHERE codigo_unidad = ?',
-                [codigo_unidad]
+                [codigoFinal]
             );
             
             if (existe) {
@@ -278,7 +332,7 @@ async function crear(req, res) {
             `INSERT INTO Unidades 
             (nombre, tipo_unidad, codigo_unidad, parent_id, descripcion)
             VALUES (?, ?, ?, ?, ?)`,
-            [nombre, tipo_unidad, codigo_unidad, parent_id, descripcion]
+            [nombre, tipo_unidad, codigoFinal, parent_id, descripcion]
         );
         
         const nuevaUnidadId = Number(resultado.insertId);
@@ -290,7 +344,7 @@ async function crear(req, res) {
             'Unidad',
             nuevaUnidadId,
             `Unidad creada: ${nombre}`,
-            { nombre, tipo_unidad, codigo_unidad, parent_id }
+            { nombre, tipo_unidad, codigo_unidad: codigoFinal, parent_id }
         );
         
         // Obtener unidad completa
@@ -315,13 +369,80 @@ async function crear(req, res) {
 }
 
 /**
+ * Generar código automático para unidades subordinadas
+ * Formato: [codigo_padre]-[prefijo][numero]
+ * Ej: ZON01-CMD01, ZON01-CMD01-CIA01, ZON01-CMD01-CIA01-PTO01
+ */
+async function generarCodigoUnidad(tipo_unidad, parent_id) {
+    try {
+        // Obtener código del padre
+        const [padre] = await query(
+            'SELECT codigo_unidad FROM Unidades WHERE id = ?',
+            [parent_id]
+        );
+        
+        if (!padre || !padre.codigo_unidad) {
+            throw new Error('La unidad padre debe tener un código asignado');
+        }
+        
+        // Determinar prefijo según tipo
+        const prefijos = {
+            'Comandancia': 'CMD',
+            'Compañia': 'CIA',
+            'Puesto': 'PTO'
+        };
+        
+        const prefijo = prefijos[tipo_unidad];
+        
+        if (!prefijo) {
+            throw new Error(`Tipo de unidad "${tipo_unidad}" no soporta generación automática de código`);
+        }
+        
+        // Buscar el siguiente número disponible para este tipo bajo el mismo padre
+        const hermanos = await query(
+            `SELECT codigo_unidad 
+             FROM Unidades 
+             WHERE parent_id = ? 
+               AND tipo_unidad = ? 
+               AND codigo_unidad IS NOT NULL
+             ORDER BY codigo_unidad`,
+            [parent_id, tipo_unidad]
+        );
+        
+        // Extraer números existentes
+        let maxNumero = 0;
+        const patron = new RegExp(`${prefijo}(\\d+)$`);
+        
+        hermanos.forEach(hermano => {
+            const match = hermano.codigo_unidad.match(patron);
+            if (match) {
+                const numero = parseInt(match[1], 10);
+                if (numero > maxNumero) {
+                    maxNumero = numero;
+                }
+            }
+        });
+        
+        // Generar nuevo código: padre + prefijo + (max + 1) con padding
+        const nuevoNumero = String(maxNumero + 1).padStart(2, '0');
+        const codigoGenerado = `${padre.codigo_unidad}-${prefijo}${nuevoNumero}`;
+        
+        return codigoGenerado;
+        
+    } catch (error) {
+        console.error('❌ Error generando código de unidad:', error);
+        throw error;
+    }
+}
+
+/**
  * PUT /api/unidades/:id
- * Actualizar unidad
+ * Actualizar unidad (permite cambio de tipo y padre con actualización recursiva)
  */
 async function actualizar(req, res) {
     try {
         const { id } = req.params;
-        const { nombre, codigo_unidad, descripcion, activo } = req.body;
+        const { nombre, tipo_unidad, parent_id, codigo_unidad, descripcion, activo } = req.body;
         
         // Verificar que la unidad existe
         const [unidad] = await query('SELECT * FROM Unidades WHERE id = ?', [id]);
@@ -333,11 +454,75 @@ async function actualizar(req, res) {
             });
         }
 
-        // Si se está actualizando el código, verificar que no exista otro con el mismo
-        if (codigo_unidad !== undefined && codigo_unidad !== unidad.codigo_unidad) {
+        // Si se cambia el tipo o el padre, validar jerarquía
+        let nuevoTipo = tipo_unidad || unidad.tipo_unidad;
+        let nuevoPadre = parent_id !== undefined ? parent_id : unidad.parent_id;
+        let nuevoCodigo = codigo_unidad;
+        
+        // Validar cambio de tipo si se proporciona
+        if (tipo_unidad && tipo_unidad !== unidad.tipo_unidad) {
+            const tiposValidos = ['Zona', 'Comandancia', 'Compañia', 'Puesto'];
+            if (!tiposValidos.includes(tipo_unidad)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tipo de unidad inválido'
+                });
+            }
+        }
+        
+        // Si se cambia el padre, validar jerarquía y regenerar código
+        if (parent_id !== undefined && parent_id !== unidad.parent_id) {
+            // Zona no puede tener padre
+            if (nuevoTipo === 'Zona' && parent_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Una Zona no puede tener unidad padre'
+                });
+            }
+            
+            // Otros tipos deben tener padre
+            if (nuevoTipo !== 'Zona' && !parent_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Un ${nuevoTipo} debe tener una unidad padre`
+                });
+            }
+            
+            // Si tiene padre, validar jerarquía estricta
+            if (parent_id) {
+                const [padre] = await query(
+                    'SELECT tipo_unidad FROM Unidades WHERE id = ?',
+                    [parent_id]
+                );
+                
+                if (!padre) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Unidad padre no encontrada'
+                    });
+                }
+                
+                // Validar jerarquía estricta
+                const jerarquiaValida = validarJerarquia(padre.tipo_unidad, nuevoTipo);
+                if (!jerarquiaValida.valido) {
+                    return res.status(400).json({
+                        success: false,
+                        message: jerarquiaValida.mensaje
+                    });
+                }
+                
+                // Si cambia el padre y no es Zona, regenerar código automáticamente
+                if (nuevoTipo !== 'Zona') {
+                    nuevoCodigo = await generarCodigoUnidad(nuevoTipo, parent_id);
+                }
+            }
+        }
+
+        // Si se proporciona código manual, verificar que no exista
+        if (nuevoCodigo !== undefined && nuevoCodigo !== unidad.codigo_unidad) {
             const [existente] = await query(
                 'SELECT id FROM Unidades WHERE codigo_unidad = ? AND id != ?',
-                [codigo_unidad, id]
+                [nuevoCodigo, id]
             );
             
             if (existente) {
@@ -356,9 +541,17 @@ async function actualizar(req, res) {
             updates.push('nombre = ?');
             params.push(nombre);
         }
-        if (codigo_unidad !== undefined) {
+        if (nuevoTipo !== unidad.tipo_unidad) {
+            updates.push('tipo_unidad = ?');
+            params.push(nuevoTipo);
+        }
+        if (nuevoPadre !== unidad.parent_id) {
+            updates.push('parent_id = ?');
+            params.push(nuevoPadre);
+        }
+        if (nuevoCodigo !== undefined) {
             updates.push('codigo_unidad = ?');
-            params.push(codigo_unidad);
+            params.push(nuevoCodigo);
         }
         if (descripcion !== undefined) {
             updates.push('descripcion = ?');
@@ -383,20 +576,36 @@ async function actualizar(req, res) {
             params
         );
 
-        // Si se actualizó el código, actualizar recursivamente los códigos de las unidades descendientes
+        // Si se cambió el tipo o el padre, actualizar recursivamente descendientes
         let unidadesActualizadas = 1;
-        if (codigo_unidad !== undefined && codigo_unidad !== unidad.codigo_unidad) {
-            unidadesActualizadas = await actualizarCodigosDescendientes(id, unidad.codigo_unidad, codigo_unidad);
+        let tiposActualizados = [];
+        
+        if ((nuevoTipo !== unidad.tipo_unidad) || (nuevoPadre !== unidad.parent_id)) {
+            const resultado = await actualizarDescendientesRecursivo(id, nuevoTipo, nuevoCodigo || unidad.codigo_unidad);
+            unidadesActualizadas += resultado.total;
+            tiposActualizados = resultado.cambios;
+        } else if (nuevoCodigo !== undefined && nuevoCodigo !== unidad.codigo_unidad) {
+            // Solo actualizar códigos si no se cambió tipo ni padre
+            unidadesActualizadas = await actualizarCodigosDescendientes(id, unidad.codigo_unidad, nuevoCodigo);
         }
         
         // Log de auditoría
+        const cambiosRealizados = {
+            nombre: nombre !== undefined,
+            tipo_unidad: nuevoTipo !== unidad.tipo_unidad,
+            parent_id: nuevoPadre !== unidad.parent_id,
+            codigo_unidad: nuevoCodigo !== unidad.codigo_unidad,
+            unidades_afectadas: unidadesActualizadas,
+            tipos_actualizados: tiposActualizados
+        };
+        
         await logManual(
             req,
             'UPDATE',
             'Unidad',
             id,
             `Unidad actualizada: ${nombre || unidad.nombre}${unidadesActualizadas > 1 ? ` (+${unidadesActualizadas - 1} descendientes)` : ''}`,
-            { nombre, codigo_unidad, descripcion, activo, unidades_afectadas: unidadesActualizadas }
+            cambiosRealizados
         );
         
         // Obtener unidad actualizada
@@ -573,6 +782,126 @@ async function actualizarCodigosDescendientes(unidadId, codigoAntiguo, codigoNue
         
     } catch (error) {
         console.error('❌ Error actualizando códigos descendientes:', error);
+        throw error;
+    }
+}
+
+/**
+ * Validar jerarquía estricta: padre → hijo permitido
+ */
+function validarJerarquia(tipoPadre, tipoHijo) {
+    const jerarquiaPermitida = {
+        'Zona': ['Comandancia'],
+        'Comandancia': ['Compañia'],
+        'Compañia': ['Puesto'],
+        'Puesto': []
+    };
+    
+    const hijosPermitidos = jerarquiaPermitida[tipoPadre];
+    
+    if (!hijosPermitidos) {
+        return {
+            valido: false,
+            mensaje: `Tipo de padre "${tipoPadre}" no reconocido`
+        };
+    }
+    
+    if (hijosPermitidos.length === 0) {
+        return {
+            valido: false,
+            mensaje: `Una unidad tipo ${tipoPadre} no puede tener unidades subordinadas`
+        };
+    }
+    
+    if (!hijosPermitidos.includes(tipoHijo)) {
+        return {
+            valido: false,
+            mensaje: `Una unidad subordinada a ${tipoPadre} solo puede ser de tipo ${hijosPermitidos.join(' o ')}`
+        };
+    }
+    
+    return { valido: true };
+}
+
+/**
+ * Determinar el tipo correcto para un hijo según el tipo del padre
+ */
+function obtenerTipoHijoSegunPadre(tipoPadre) {
+    const mapaTipos = {
+        'Zona': 'Comandancia',
+        'Comandancia': 'Compañia',
+        'Compañia': 'Puesto'
+    };
+    
+    return mapaTipos[tipoPadre] || null;
+}
+
+/**
+ * Actualizar recursivamente tipos y códigos de unidades descendientes
+ * cuando se cambia el tipo o padre de una unidad
+ */
+async function actualizarDescendientesRecursivo(unidadId, tipopadreNuevo, codigoPadreNuevo) {
+    try {
+        let totalActualizadas = 0;
+        const cambios = [];
+        
+        // Obtener todos los hijos directos
+        const hijos = await query(
+            'SELECT id, nombre, tipo_unidad, codigo_unidad FROM Unidades WHERE parent_id = ?',
+            [unidadId]
+        );
+        
+        if (hijos.length === 0) {
+            return { total: totalActualizadas, cambios };
+        }
+        
+        // Determinar el tipo correcto para los hijos según el nuevo tipo del padre
+        const tipoHijoCorrecto = obtenerTipoHijoSegunPadre(tipopadreNuevo);
+        
+        if (!tipoHijoCorrecto) {
+            // El padre no puede tener hijos (ej: Puesto)
+            throw new Error(`Una unidad tipo ${tipopadreNuevo} no puede tener unidades subordinadas`);
+        }
+        
+        // Actualizar cada hijo
+        for (const hijo of hijos) {
+            const tipoAntiguo = hijo.tipo_unidad;
+            const codigoAntiguo = hijo.codigo_unidad;
+            
+            // Generar nuevo código automático para el hijo
+            const nuevoCodigoHijo = await generarCodigoUnidad(tipoHijoCorrecto, unidadId);
+            
+            // Actualizar tipo y código del hijo
+            await query(
+                'UPDATE Unidades SET tipo_unidad = ?, codigo_unidad = ? WHERE id = ?',
+                [tipoHijoCorrecto, nuevoCodigoHijo, hijo.id]
+            );
+            
+            totalActualizadas++;
+            cambios.push({
+                id: hijo.id,
+                nombre: hijo.nombre,
+                tipo_antiguo: tipoAntiguo,
+                tipo_nuevo: tipoHijoCorrecto,
+                codigo_antiguo: codigoAntiguo,
+                codigo_nuevo: nuevoCodigoHijo
+            });
+            
+            // Actualizar recursivamente los descendientes de este hijo
+            const resultado = await actualizarDescendientesRecursivo(
+                hijo.id,
+                tipoHijoCorrecto,
+                nuevoCodigoHijo
+            );
+            
+            totalActualizadas += resultado.total;
+            cambios.push(...resultado.cambios);
+        }
+        
+        return { total: totalActualizadas, cambios };
+        
+    } catch (error) {
+        console.error('❌ Error actualizando descendientes recursivamente:', error);
         throw error;
     }
 }

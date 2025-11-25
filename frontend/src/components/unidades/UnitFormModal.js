@@ -12,6 +12,7 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
 
   const [submitting, setSubmitting] = useState(false);
   const [unidades, setUnidades] = useState([]);
+  const [tiposPermitidos, setTiposPermitidos] = useState(['Zona', 'Comandancia', 'Compañia', 'Puesto']);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -46,11 +47,16 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
         activo: unit.activo !== undefined ? unit.activo : true
       });
     } else if (isOpen && parentUnit) {
-      // Si tiene padre, pre-seleccionar
+      // Si tiene padre, pre-seleccionar y actualizar tipos permitidos
+      actualizarTiposPermitidos(parentUnit.tipo_unidad);
       setFormData(prev => ({
         ...prev,
-        parent_id: parentUnit.id
+        parent_id: parentUnit.id,
+        tipo_unidad: '' // Limpiar para que el usuario seleccione
       }));
+    } else if (isOpen && !parentUnit) {
+      // Sin padre, solo puede ser Zona
+      setTiposPermitidos(['Zona']);
     }
   }, [isOpen, unit, parentUnit]);
 
@@ -74,10 +80,36 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    
+    // Si cambia el padre, actualizar tipos permitidos
+    if (name === 'parent_id' && value) {
+      const unidadPadre = unidades.find(u => u.id === parseInt(value));
+      if (unidadPadre) {
+        actualizarTiposPermitidos(unidadPadre.tipo_unidad);
+        // Limpiar tipo_unidad si ya no es válido
+        setFormData(prev => ({ ...prev, tipo_unidad: '' }));
+      }
+    } else if (name === 'parent_id' && !value) {
+      // Sin padre, solo puede ser Zona
+      setTiposPermitidos(['Zona']);
+      setFormData(prev => ({ ...prev, tipo_unidad: 'Zona' }));
+    }
+    
     // Limpiar error del campo
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const actualizarTiposPermitidos = (tipoPadre) => {
+    const jerarquia = {
+      'Zona': ['Comandancia'],
+      'Comandancia': ['Compañia'],
+      'Compañia': ['Puesto']
+    };
+    
+    const permitidos = jerarquia[tipoPadre] || [];
+    setTiposPermitidos(permitidos);
   };
 
   const validarFormulario = () => {
@@ -98,8 +130,13 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
       nuevosErrores.parent_id = 'Debe seleccionar una unidad superior';
     }
 
-    if (formData.codigo_unidad && formData.codigo_unidad.trim().length < 2) {
-      nuevosErrores.codigo_unidad = 'El código debe tener al menos 2 caracteres';
+    // Validar código solo para Zona (es obligatorio)
+    if (formData.tipo_unidad === 'Zona') {
+      if (!formData.codigo_unidad || !formData.codigo_unidad.trim()) {
+        nuevosErrores.codigo_unidad = 'El código de Zona es requerido';
+      } else if (formData.codigo_unidad.trim().length < 3) {
+        nuevosErrores.codigo_unidad = 'El código debe tener al menos 3 caracteres (ej: ZON01)';
+      }
     }
 
     setErrors(nuevosErrores);
@@ -172,15 +209,40 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
           placeholder="Ej: Comandancia de Madrid"
         />
 
-        {/* Código Unidad */}
-        <Input
-          label="Código de Unidad"
-          name="codigo_unidad"
-          value={formData.codigo_unidad}
-          onChange={handleChange}
-          error={errors.codigo_unidad}
-          placeholder="Ej: CMD-MAD"
-        />
+        {/* Código Unidad - Solo para Zona */}
+        {formData.tipo_unidad === 'Zona' && (
+          <Input
+            label="Código de Zona *"
+            name="codigo_unidad"
+            value={formData.codigo_unidad}
+            onChange={handleChange}
+            error={errors.codigo_unidad}
+            placeholder="Ej: ZON01"
+            helperText="Este código será el prefijo para todas las unidades subordinadas"
+          />
+        )}
+
+        {/* Aviso de código automático para subordinadas */}
+        {formData.tipo_unidad && formData.tipo_unidad !== 'Zona' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-blue-800 text-sm">
+              <strong>ℹ️ Código automático:</strong> El código se generará automáticamente al crear la unidad.
+              {formData.tipo_unidad === 'Comandancia' && ' Formato: [código-zona]-CMD01'}
+              {formData.tipo_unidad === 'Compañia' && ' Formato: [código-comandancia]-CIA01'}
+              {formData.tipo_unidad === 'Puesto' && ' Formato: [código-compañía]-PTO01'}
+            </p>
+          </div>
+        )}
+
+        {/* Advertencia de cambio de tipo/padre en edición */}
+        {isEditMode && (unit?.tipo_unidad !== formData.tipo_unidad || unit?.parent_id !== formData.parent_id) && (
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3">
+            <p className="text-yellow-800 text-sm">
+              <strong>⚠️ Advertencia:</strong> Al cambiar el tipo o la unidad padre, se actualizarán automáticamente
+              todas las unidades descendientes para mantener la jerarquía correcta.
+            </p>
+          </div>
+        )}
 
         {/* Grid de 2 columnas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -196,13 +258,24 @@ const UnitFormModal = ({ isOpen, onClose, unit, parentUnit, onSuccess }) => {
               className={`input-field ${errors.tipo_unidad ? 'border-red-500' : ''}`}
             >
               <option value="">Seleccionar tipo</option>
-              <option value="Zona">Zona</option>
-              <option value="Comandancia">Comandancia</option>
-              <option value="Compañia">Compañía</option>
-              <option value="Puesto">Puesto</option>
+              {tiposPermitidos.map(tipo => (
+                <option key={tipo} value={tipo}>
+                  {tipo === 'Compañia' ? 'Compañía' : tipo}
+                </option>
+              ))}
             </select>
             {errors.tipo_unidad && (
               <p className="text-red-500 text-xs mt-1">{errors.tipo_unidad}</p>
+            )}
+            {isEditMode && (
+              <p className="text-xs text-gray-500 mt-1">
+                El tipo de unidad no puede modificarse
+              </p>
+            )}
+            {!isEditMode && formData.parent_id && tiposPermitidos.length === 1 && (
+              <p className="text-xs text-blue-600 mt-1">
+                Solo se permite tipo {tiposPermitidos[0] === 'Compañia' ? 'Compañía' : tiposPermitidos[0]} bajo esta unidad
+              </p>
             )}
           </div>
 
