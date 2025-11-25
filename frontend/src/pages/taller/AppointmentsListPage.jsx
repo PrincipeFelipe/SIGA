@@ -36,6 +36,17 @@ const AppointmentsListPage = () => {
     const canCancel = hasPermission('appointments:cancel');
     const canView = hasPermission('appointments:view');
 
+    // Debug: Verificar permisos cargados
+    useEffect(() => {
+        console.log('🔍 [AppointmentsListPage] Permisos verificados:', {
+            canView,
+            canCreate,
+            canEdit,
+            canManage,
+            canCancel
+        });
+    }, [canView, canCreate, canEdit, canManage, canCancel]);
+
     const loadAppointments = useCallback(async () => {
         try {
             setLoading(true);
@@ -305,6 +316,31 @@ const AppointmentsListPage = () => {
     return (
         <Layout>
             <div className="p-6 space-y-6">
+                {/* DEBUG: Banner de permisos (TEMPORAL) */}
+                <div className="bg-blue-50 border border-blue-300 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-blue-800 mb-2">🔍 DEBUG: Estado de Permisos</p>
+                    <div className="grid grid-cols-5 gap-2 text-xs">
+                        <div className={canView ? 'text-green-700' : 'text-red-700'}>
+                            Ver: {canView ? '✅' : '❌'}
+                        </div>
+                        <div className={canCreate ? 'text-green-700' : 'text-red-700'}>
+                            Crear: {canCreate ? '✅' : '❌'}
+                        </div>
+                        <div className={canEdit ? 'text-green-700' : 'text-red-700'}>
+                            Editar: {canEdit ? '✅' : '❌'}
+                        </div>
+                        <div className={canManage ? 'text-green-700' : 'text-red-700'}>
+                            Gestionar: {canManage ? '✅' : '❌'}
+                        </div>
+                        <div className={canCancel ? 'text-green-700' : 'text-red-700'}>
+                            Cancelar: {canCancel ? '✅' : '❌'}
+                        </div>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-2">
+                        💡 Si alguno está en rojo, cierra sesión y vuelve a iniciar sesión
+                    </p>
+                </div>
+
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
